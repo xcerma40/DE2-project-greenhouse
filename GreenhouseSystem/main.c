@@ -19,6 +19,7 @@
 #include <avr/io.h>         // AVR device-specific IO definitions
 #include <avr/interrupt.h>  // Interrupts standard C library for AVR-GCC
 #include <stdlib.h>         // C library. Needed for conversion function
+#include <stdio.h>         // C library. Needed for conversion function
 #include "timer.h"          // Timer library for AVR-GCC
 #include "uart.h"           // Peter Fleury's UART library
 #include "twi.h"            // TWI library for AVR-GCC
@@ -30,6 +31,14 @@ typedef enum {              // FSM declaration
     STATE_ACK
 } state_t;
 
+/*uint8_t humid_integral = 0;
+uint8_t humid_scale = 0;
+uint8_t temperature_integral = 0;
+uint8_t temperature_scale = 0;*/
+uint16_t humidity = 0;
+uint16_t temperature = 0;
+uint8_t humid_temp_flag = 0;
+
 /* Function definitions ----------------------------------------------*/
 /**********************************************************************
  * Function: Main function where the program execution begins
@@ -37,6 +46,22 @@ typedef enum {              // FSM declaration
  *           Send information about scanning process to UART.
  * Returns:  none
  **********************************************************************/
+double compose_float(uint8_t integral, uint8_t scale)
+{
+	double value = 0;
+	uint8_t t_scale = scale;
+	
+	while (t_scale > 0){
+		value += t_scale % 10;
+		value /= 10;
+		t_scale /= 10;
+	}
+	
+	value += integral;
+	
+	return value;
+}
+
 int main(void)
 {
     // Initialize I2C (TWI)
@@ -54,13 +79,30 @@ int main(void)
     sei();
 
     // Put strings to ringbuffer for transmitting via UART
-    uart_puts("\r\nScan I2C-bus for devices:\r\n");
+    uart_puts("Greenhouse: init\r\n");
 
+	char uart_string[] = "00000";      // String for converting numbers by itoa()
+	
+	uint16_t previous_humidity = -1;
+	uint16_t previous_temperature = 0;
     // Infinite loop
     while (1)
     {
         /* Empty loop. All subsequent operations are performed exclusively 
          * inside interrupt service routines ISRs */
+		if (humid_temp_flag /*&& (humidity != previous_humidity)*/){
+			
+			//humidity = compose_float(humid_integral, humid_scale);
+			uart_puts("Humidity: ");
+			itoa(humidity, uart_string, 10);
+			uart_puts(uart_string);
+			
+			//temperature = compose_float(temperature_integral, temperature_scale);
+			uart_puts("Temperature: ");
+			itoa(temperature, uart_string, 10);
+			uart_puts(uart_string);
+		}
+		
     }
 
     // Will never reach this
@@ -141,55 +183,72 @@ void scanDevices(){
     }
 }
 
-double get_humidity(uint8_t integral, uint8_t scale)
-{
-	double humidity = 0;
-	uint8_t t_scale = scale;
+/*uint8_t dht12_get_byte(){
 	
-	while (t_scale > 0){
-		humidity += t_scale % 10;
-		humidity /= 10;
-		t_scale /= 10;
-	}
-	
-	humidity += integral;
-	
-	return humidity;
-}
-
-uint8_t dht12_get_byte(){
-	
-}
+}*/
 
 void read_and_send_tmp_hum()
 {
-	uint8_t addr = 0xB8 >> 1;			// I2C address of humid+temp sensor 
-	char uart_string[5] = "00000";      // String for converting numbers by itoa()
-	static uint8_t humid_integral = 0;
-	static uint8_t humid_scale = 0;
-	static uint8_t temperature_integral = 0;
-	static uint8_t temperature_scale = 0;
+	uart_puts("reading data from DHT12\r\n");
+	uint8_t addr = 0xB8 >> 1;			// 7bit I2C address of humid+temp sensor, needs to be shifted to right for (n)ack
+
+	uint8_t humid_integral = 0;
+	uint8_t humid_scale = 0;
+	uint8_t temperature_integral = 0;
+	uint8_t temperature_scale = 0;
+	
+	humid_temp_flag = 0;
+	uint8_t checksum = 0;
 	
 	/*itoa(result, uart_string, 10);
 	uart_puts(uart_string);
 	uart_puts("\n\r");*/
 		
-	twi_start((addr<<1) + TWI_WRITE);
-	twi_write(0x00);                    // request for fraction part
+	twi_start((addr<<1) + TWI_READ);
+	//twi_write(0x00);                    // request for fraction part
 		
-	twi_start((addr<<1) + TWI_READ);    
+	//twi_start((addr<<1) + TWI_READ);    
 	humid_integral = twi_read_ack();    // get fraction part
+		
+	//twi_start((addr<<1) + TWI_WRITE);   
+	//twi_write(0x01);                    // request for scale part
+		
+	//twi_start((addr<<1) + TWI_READ);   
+	humid_scale = twi_read_ack();			// get scale part
+	
+	//twi_start((addr<<1) + TWI_WRITE);
+	//twi_write(0x02);                    // request for fraction part
+	
+	//twi_start((addr<<1) + TWI_READ);
+	temperature_integral = twi_read_ack();    // get fraction part
 	//result <<= 8;
-	twi_stop();
-		
-	twi_start((addr<<1) + TWI_WRITE);   
-	twi_write(0x01);                    // request for scale part
-		
-	twi_start((addr<<1) + TWI_READ);   
-	humid_scale twi_read_ack();			// get scale part
+	//twi_stop();
+	
+	//twi_start((addr<<1) + TWI_WRITE);
+	//twi_write(0x03);                    // request for scale part
+	
+	//twi_start((addr<<1) + TWI_READ);
+	temperature_scale = twi_read_ack();			// get scale part
+	
+	//twi_start((addr<<1) + TWI_WRITE);
+	//twi_write(0x04);                    // request for scale part
+	
+	//twi_start((addr<<1) + TWI_READ);
+	checksum = twi_read_nack();			// get scale part
+	
 	twi_stop();
 	
-	double humidity = get_humidity(humid_integral, humid_scale);
+	if (checksum == (humid_integral | humid_scale | temperature_integral | temperature_scale)) {
+		humid_temp_flag = 1;	
+		temperature = temperature_integral * 10 + temperature_scale;
+	}
+	else {
+		humid_temp_flag = 0;
+		humidity = humid_integral * 10 + humid_scale;
+	}
+	
+	
+	//double humidity = get_humidity(humid_integral, humid_scale);
 }
 
 /* Interrupt service routines ----------------------------------------*/
@@ -200,5 +259,7 @@ void read_and_send_tmp_hum()
  **********************************************************************/
 ISR(TIMER1_OVF_vect)
 {
-	read_and_send_tmp_hum()();
+	uart_puts("overflow\r\n");
+	read_and_send_tmp_hum();
+	//scanDevices();
 }
