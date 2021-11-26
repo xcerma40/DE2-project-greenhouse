@@ -46,21 +46,6 @@ uint8_t humid_temp_flag = 0;
  *           Send information about scanning process to UART.
  * Returns:  none
  **********************************************************************/
-double compose_float(uint8_t integral, uint8_t scale)
-{
-	double value = 0;
-	uint8_t t_scale = scale;
-	
-	while (t_scale > 0){
-		value += t_scale % 10;
-		value /= 10;
-		t_scale /= 10;
-	}
-	
-	value += integral;
-	
-	return value;
-}
 
 int main(void)
 {
@@ -74,6 +59,9 @@ int main(void)
     // Set prescaler to 33 ms and enable interrupt
     TIM1_overflow_33ms();
     TIM1_overflow_interrupt_enable();
+	
+	TIM0_overflow_16ms();
+	TIM0_overflow_interrupt_enable();
 
     // Enables interrupts by setting the global interrupt mask
     sei();
@@ -109,84 +97,6 @@ int main(void)
     return 0;
 }
 
-void scanDevices(){
-	
-	static state_t state = STATE_IDLE;  // Current state of the FSM
-    static uint8_t addr = 0;            // I2C slave address
-    uint8_t result = 1;                 // ACK result from the bus
-    char uart_string[2] = "00"; // String for converting numbers by itoa()
-
-    // FSM
-    switch (state)
-    {
-    // Increment I2C slave address
-    case STATE_IDLE:
-        // If slave address is between 8 and 119 then move to SEND state
-		if (addr > 7 && addr < 118)
-		{
-			state = STATE_SEND;
-		}
-		else {
-			uart_puts("RA ");
-		}
-		if (addr % 16 == 0){
-			uart_puts("\r\n");
-		}
-		if (addr > 127) {
-			uart_puts("\r\n");
-			addr = 0;
-		}
-		
-		addr++;
-        break;
-    
-    // Transmit I2C slave address and get result
-    case STATE_SEND:
-        // I2C address frame:
-        // +------------------------+------------+
-        // |      from Master       | from Slave |
-        // +------------------------+------------+
-        // | 7  6  5  4  3  2  1  0 |     ACK    |
-        // |a6 a5 a4 a3 a2 a1 a0 R/W|   result   |
-        // +------------------------+------------+
-        result = twi_start((addr<<1) + TWI_WRITE);
-		/*tohle je asi blbe
-		twi_write(2);
-		//uint8_t temperature = twi_read_ack();
-		*/
-        twi_stop();
-        /* Test result from I2C bus. If it is 0 then move to ACK state, 
-         * otherwise move to IDLE */
-		if (result == 0) {
-			state = STATE_ACK;
-		} else {
-			uart_puts("-- ");
-			state = STATE_IDLE;
-		}
-
-        break;
-
-    // A module connected to the bus was found
-    case STATE_ACK:
-        // Send info about active I2C slave to UART and move to IDLE
-		//uart_puts("StateAck\n");
-		itoa(addr, uart_string, 10);
-		uart_puts(uart_string);
-		uart_putc(' ');
-		state = STATE_IDLE;
-        break;
-
-    // If something unexpected happens then move to IDLE
-    default:
-        state = STATE_IDLE;
-        break;
-    }
-}
-
-/*uint8_t dht12_get_byte(){
-	
-}*/
-
 void read_and_send_tmp_hum()
 {
 	uart_puts("reading data from DHT12\r\n");
@@ -199,48 +109,21 @@ void read_and_send_tmp_hum()
 	
 	humid_temp_flag = 0;
 	uint8_t checksum = 0;
-	
-	/*itoa(result, uart_string, 10);
-	uart_puts(uart_string);
-	uart_puts("\n\r");*/
 		
 	twi_start((addr<<1) + TWI_READ);
-	//twi_write(0x00);                    // request for fraction part
-		
-	//twi_start((addr<<1) + TWI_READ);    
-	humid_integral = twi_read_ack();    // get fraction part
-		
-	//twi_start((addr<<1) + TWI_WRITE);   
-	//twi_write(0x01);                    // request for scale part
-		
-	//twi_start((addr<<1) + TWI_READ);   
+   
+	humid_integral = twi_read_ack();    // get fraction part 
 	humid_scale = twi_read_ack();			// get scale part
 	
-	//twi_start((addr<<1) + TWI_WRITE);
-	//twi_write(0x02);                    // request for fraction part
-	
-	//twi_start((addr<<1) + TWI_READ);
 	temperature_integral = twi_read_ack();    // get fraction part
-	//result <<= 8;
-	//twi_stop();
-	
-	//twi_start((addr<<1) + TWI_WRITE);
-	//twi_write(0x03);                    // request for scale part
-	
-	//twi_start((addr<<1) + TWI_READ);
 	temperature_scale = twi_read_ack();			// get scale part
-	
-	//twi_start((addr<<1) + TWI_WRITE);
-	//twi_write(0x04);                    // request for scale part
-	
-	//twi_start((addr<<1) + TWI_READ);
+
 	checksum = twi_read_nack();			// get scale part
-	
 	twi_stop();
 	
 	if (checksum == (humid_integral | humid_scale | temperature_integral | temperature_scale)) {
 		humid_temp_flag = 1;	
-		temperature = temperature_integral * 10 + temperature_scale;
+		temperature = temperature_integral * 10 + temperature_scale;	// 25.5 °C -> 255
 	}
 	else {
 		humid_temp_flag = 0;
@@ -248,7 +131,6 @@ void read_and_send_tmp_hum()
 	}
 	
 	
-	//double humidity = get_humidity(humid_integral, humid_scale);
 }
 
 /* Interrupt service routines ----------------------------------------*/
@@ -261,5 +143,12 @@ ISR(TIMER1_OVF_vect)
 {
 	uart_puts("overflow\r\n");
 	read_and_send_tmp_hum();
+	//scanDevices();
+}
+
+ISR(TIMER2_OVF_vect)
+{
+	uart_puts("overflow\r\n");
+	//read_and_send_tmp_hum();
 	//scanDevices();
 }
