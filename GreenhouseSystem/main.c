@@ -25,6 +25,7 @@
 #include "twi.h"            // TWI library for AVR-GCC
 #include "lcd.h"
 #include "lcd_definitions.h"
+#include "gpio.h"
 
 /* Variables ---------------------------------------------------------*/
 typedef enum {              // FSM declaration
@@ -57,19 +58,21 @@ void lcd_updateMenu(){
 	char lcd_string[] = "00000000000000000";
 	
 	lcd_gotoxy(0, 0);
-	/*sprintf (lcd_string, "H:%d,%d\r\n", humidity / 10, humidity % 10);
+	sprintf (lcd_string, "H:%d,%d  ", humidity / 10, humidity % 10);
 	lcd_puts(lcd_string);
 	lcd_gotoxy(9, 0);
-	sprintf (lcd_string, "T:%d,%d\r\n", temperature / 10, temperature % 10);
+	sprintf (lcd_string, "T:%d,%d  ", temperature / 10, temperature % 10);
 	lcd_puts(lcd_string);
 	lcd_gotoxy(0, 1);
-	sprintf (lcd_string, "L:%d,%d\r\n", luminescence / 10, luminescence % 10);
-	lcd_puts(lcd_string);*/
-	lcd_puts("test");
+	sprintf (lcd_string, "L:%d,%d  ", luminescence / 10, luminescence % 10);
+	lcd_puts(lcd_string);
+	//lcd_puts("test");
 }
 
 uint8_t read_and_send_tmp_hum();
 uint8_t read_luminescence();
+void servoLeft();
+void servoRight();
 
 int main(void)
 {
@@ -104,7 +107,6 @@ int main(void)
 	//cli();
 
     // Put strings to ringbuffer for transmitting via UART
-    //uart_puts("Greenhouse: init\r\n");
 	uart_puts("GH: init\r\n");
 	lcd_updateMenu();
 
@@ -146,6 +148,22 @@ int main(void)
     return 0;
 }
 
+void servoLeft(){
+	GPIO_write_high(&PORTB, servo);
+	_delay_ms(1);
+	GPIO_write_low(&PORTB, servo);
+	_delay_ms(19);
+	
+};
+
+void servoRight(){
+	GPIO_write_high(&PORTB, servo);
+	_delay_ms(2);
+	GPIO_write_low(&PORTB, servo);
+	_delay_ms(18);
+	
+};
+
 uint8_t read_and_send_tmp_hum()
 {
 	humid_temp_flag = 0;
@@ -167,52 +185,18 @@ uint8_t read_and_send_tmp_hum()
 		return 0;
 	}
 	
-	/*itoa(res, uart_string, 10);
-	uart_puts(uart_string);*/
-	
 	twi_write(0x00);
-	//twi_stop();
-	
-	//uart_puts("test\r\n");
 	
 	twi_start((addr << 1) + TWI_READ);
 	
 	humid_integral = twi_read_ack();    // get fraction part 
 	humid_scale = twi_read_ack();			// get scale part
 	
-	//twi_write(0x02);
-	
 	temperature_integral = twi_read_ack();    // get fraction part
 	temperature_scale = twi_read_ack();			// get scale part
 
 	checksum = twi_read_nack();			// get scale part
 	twi_stop();
-	
-	//sprintf (us1, "Humid: %d,%d\r\n", humid_integral, humid_scale);
-	/*itoa(humid_integral,us1,10);
-	uart_puts(us1);
-	
-	uart_putc(',');
-	
-	itoa(humid_scale,us1,10);
-	uart_puts(us1);
-	
-	uart_putc(',');
-	
-	itoa(temperature_integral,us1,10);
-	uart_puts(us1);
-	
-	uart_putc(',');
-	
-	itoa(humid_scale,us1,10);
-	uart_puts(us1);
-	
-	uart_putc(',');
-	
-	itoa(checksum,us1,10);
-	uart_puts(us1);
-	
-	uart_putc('.');*/
 	
 	if (checksum == (humid_integral + humid_scale + temperature_integral + temperature_scale)) {
 		humid_temp_flag = 1;	
@@ -240,35 +224,19 @@ uint16_t get_lux(uint16_t data){
 
 // read data from BH1750 light sensor
 uint8_t read_luminescence(){	//manual str.12
-	//uart_puts("test");
+	
 	luminescence_flag = 0;
 	static state_bh state = STATE_WRITE;	// Current state of the FSM
 	//uint8_t addr = 0x5C;			// ADDR ? 0.7VCC -> H
 	uint8_t addr = 0x23;			// ADDR ? 0.3VCC -> L
 	uint16_t data = -1;
 	uint8_t result = -1;
-	
-	/*result = twi_start((addr<<1) + TWI_WRITE);
-	//twi_write(0);
-	char us1 [] = "00000";
-	itoa(result, us1, 10);
-	uart_puts(us1);
-	twi_write(0b00010001);
-	twi_stop();*/
-	
-	/*twi_start((addr<<1) + TWI_READ);
-	
-	humid_integral = twi_read_ack();    // get fraction part
-	humid_scale = twi_read_ack();*/
 
 	// FSM
 	switch (state)
 	{
 		case STATE_WRITE:
 			result = twi_start((addr<<1) + TWI_WRITE);
-			//char us1 [] = "00000";
-			//itoa(result,us1,10);
-			//uart_puts(us1);
 			twi_write(0b00010001);
 			twi_stop();
 			state = STATE_READ;
@@ -281,10 +249,6 @@ uint8_t read_luminescence(){	//manual str.12
 			
 			luminescence = get_lux(data);
 			luminescence_flag = 1;
-			
-			/*char us1 [] = "00000";
-			itoa(luminescence, us1, 10);
-			uart_puts(us1);*/
 			
 			state = STATE_WRITE;
 		break;
