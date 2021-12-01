@@ -1,5 +1,5 @@
 #ifndef TIMER_H
-# define TIMER_H
+#define TIMER_H
 
 /***********************************************************************
  * 
@@ -62,7 +62,20 @@
  * @note  t_OVF = 1/F_CPU * prescaler * 2^n where n = 8, F_CPU = 16 MHz
  */
 // WRITE YOUR CODE HERE
+/**
+ * @name  Definitions of Timer/Counter0
+ * @note  F_CPU = 16 MHz
+ */
 
+#define TIM0_stop()             TCCR0B &= ~((1<<CS02) | (1<<CS01) | (1<<CS00));           // 000 --> STOP
+#define TIM0_overflow_16us()     TCCR0B &= ~((1<<CS02) | (1<<CS01)); TCCR0B |= (1<<CS00); // 001 --> 1		
+#define TIM0_overflow_128us()    TCCR0B &= ~((1<<CS02) | (1<<CS00)); TCCR0B |= (1<<CS01); // 010 --> 8		
+#define TIM0_overflow_1024us()   TCCR0B &= ~(1<<CS02); TCCR0B |= (1<<CS01) | (1<<CS00);	  // 011 --> 64		
+#define TIM0_overflow_4ms()      TCCR0B &= ~((1<<CS01) | (1<<CS00)); TCCR0B |= (1<<CS02); // 100 --> 256	
+#define TIM0_overflow_16ms()      TCCR0B &= ~(1<<CS01); TCCR0B |= (1<<CS02) | (1<<CS00);  // 101 --> 1024
+
+#define TIM0_overflow_interrupt_enable()    TIMSK0 |= (1<<TOIE0);   // 1 --> enable
+#define TIM0_overflow_interrupt_disable()   TIMSK0 &= ~(1<<TOIE0);  // 0 --> disable
 /**
  * @name  Definitions for 8-bit Timer/Counter2
  * @note  t_OVF = 1/F_CPU * prescaler * 2^n where n = 8, F_CPU = 16 MHz
@@ -70,5 +83,19 @@
 // WRITE YOUR CODE HERE
 
 /** @} */
+
+#define TIM2_stop()              TCCR2B &= ~((1<<CS22) | (1<<CS21) | (1<<CS20));           // 000 --> STOP
+#define TIM2_overflow_16us()     TCCR2B &= ~((1<<CS22) | (1<<CS21)); TCCR2B |= (1<<CS20); // 001 --> 1		
+#define TIM2_overflow_128us()    TCCR2B &= ~((1<<CS22) | (1<<CS20)); TCCR2B |= (1<<CS21); // 010 --> 8	
+#define TIM2_overflow_512us()    TCCR2B &= ~((1<<CS22)); TCCR2B |= (1<<CS21) | (1<<CS20); // 011 --> 32		
+#define TIM2_overflow_1024us()   TCCR2B &= ~((1<<CS21) | (1<<CS20)); TCCR2B |= (1<<CS22);	  // 100 --> 64	
+#define TIM2_overflow_2048us()   TCCR2B &= ~(1<<CS21); TCCR2B |= (1<<CS22) | (1<<CS20);	  // 101 --> 128		
+#define TIM2_overflow_4ms()      TCCR2B &= ~(1<<CS20); TCCR2B |= (1<<CS22) | (1<<CS21); // 110 --> 256	
+#define TIM2_overflow_16ms()     TCCR2B |= (1<<CS22) | (1<<CS20) | (1<<CS21);  // 111 --> 1024
+
+#define TIM2_overflow_interrupt_enable()    TIMSK2 |= (1<<TOIE2);   // 1 --> enable
+#define TIM2_overflow_interrupt_disable()   TIMSK2 &= ~(1<<TOIE2);  // 0 --> disable
+
+//TODO - pozor! overflow 128 je špatnì!!! dodefinovat a zkontrolovat celé - pozor na datasheet
 
 #endif

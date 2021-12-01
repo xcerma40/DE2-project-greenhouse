@@ -23,6 +23,8 @@
 #include "timer.h"          // Timer library for AVR-GCC
 #include "uart.h"           // Peter Fleury's UART library
 #include "twi.h"            // TWI library for AVR-GCC
+#include "lcd.h"
+#include "lcd_definitions.h"
 
 /* Variables ---------------------------------------------------------*/
 typedef enum {              // FSM declaration
@@ -55,15 +57,19 @@ void lcd_updateMenu(){
 	char lcd_string[] = "00000000000000000";
 	
 	lcd_gotoxy(0, 0);
-	sprintf (lcd_string, "H:%d,%d\r\n", humidity / 10, humidity % 10);
+	/*sprintf (lcd_string, "H:%d,%d\r\n", humidity / 10, humidity % 10);
 	lcd_puts(lcd_string);
 	lcd_gotoxy(9, 0);
 	sprintf (lcd_string, "T:%d,%d\r\n", temperature / 10, temperature % 10);
 	lcd_puts(lcd_string);
 	lcd_gotoxy(0, 1);
 	sprintf (lcd_string, "L:%d,%d\r\n", luminescence / 10, luminescence % 10);
-	lcd_puts(lcd_string);
+	lcd_puts(lcd_string);*/
+	lcd_puts("test");
 }
+
+uint8_t read_and_send_tmp_hum();
+uint8_t read_luminescence();
 
 int main(void)
 {
@@ -79,6 +85,8 @@ int main(void)
 	// Put string(s) at LCD display
 	// Set pointer to beginning of CGRAM memory
 	lcd_command(1 << LCD_CGRAM);
+	
+	lcd_command(1 << LCD_DDRAM);
 
     // Configure 16-bit Timer/Counter1 to update FSM
     // Set prescaler to 33 ms and enable interrupt
@@ -88,14 +96,16 @@ int main(void)
     TIM1_overflow_262ms();
     TIM1_overflow_interrupt_enable();
 
-	TIM2_overflow_16ms();
-	TIM2_overflow_interrupt_enable();
+	/*TIM2_overflow_16ms();
+	TIM2_overflow_interrupt_enable();*/
 	
     // Enables interrupts by setting the global interrupt mask
     sei();
+	//cli();
 
     // Put strings to ringbuffer for transmitting via UART
-    uart_puts("Greenhouse: init\r\n");
+    //uart_puts("Greenhouse: init\r\n");
+	uart_puts("GH: init\r\n");
 	lcd_updateMenu();
 
 	char uart_string[] = "00000000000000000";      // String for converting numbers by itoa()
@@ -106,19 +116,25 @@ int main(void)
     // Infinite loop
     while (1)
     {
+		//uart_puts("cycle\r\n");
 		if (humid_temp_flag){
+			//uart_puts("DHT12 read\r\n");
 			if (humidity != previous_humidity){
+				previous_humidity = humidity;
 				sprintf (uart_string, "Humidity: %d,%d\r\n", humidity / 10, humidity % 10);
-				uart_puts(uart_string);	
+				uart_puts(uart_string);
 			}
 			if (temperature != previous_temperature){
+				previous_temperature = temperature;
 				sprintf (uart_string, "Temperature: %d,%d\r\n", temperature / 10, temperature % 10);
 				uart_puts(uart_string);
 			}
 			humid_temp_flag = 0;
 		}
 		if (luminescence_flag){
+			//uart_puts("m: lum\r\n");
 			if (luminescence != previous_luminescence){
+				previous_luminescence = luminescence;
 				sprintf (uart_string, "Luminescence: %d,%d\r\n", luminescence / 10, luminescence % 10);
 				uart_puts(uart_string);
 			}
@@ -130,23 +146,41 @@ int main(void)
     return 0;
 }
 
-void read_and_send_tmp_hum()
+uint8_t read_and_send_tmp_hum()
 {
-	uart_puts("reading data from DHT12\r\n");
-	uint8_t addr = 0xB8 >> 1;			// 7bit I2C address of humid+temp sensor, needs to be shifted to right for (n)ack
+	humid_temp_flag = 0;
+	uint8_t addr = 0x5C;			// 7bit I2C address of humid+temp sensor, needs to be shifted to right for (n)ack
 
 	uint8_t humid_integral = 0;
 	uint8_t humid_scale = 0;
 	uint8_t temperature_integral = 0;
 	uint8_t temperature_scale = 0;
 	
-	humid_temp_flag = 0;
 	uint8_t checksum = 0;
 		
-	twi_start((addr<<1) + TWI_READ);
-   
+	char us1 [] = "00000000000000";
+	
+	uint8_t res = twi_start((addr << 1) + TWI_WRITE);
+	
+	if (res == 1){
+		twi_stop();
+		return 0;
+	}
+	
+	/*itoa(res, uart_string, 10);
+	uart_puts(uart_string);*/
+	
+	twi_write(0x00);
+	//twi_stop();
+	
+	//uart_puts("test\r\n");
+	
+	twi_start((addr << 1) + TWI_READ);
+	
 	humid_integral = twi_read_ack();    // get fraction part 
 	humid_scale = twi_read_ack();			// get scale part
+	
+	//twi_write(0x02);
 	
 	temperature_integral = twi_read_ack();    // get fraction part
 	temperature_scale = twi_read_ack();			// get scale part
@@ -154,13 +188,39 @@ void read_and_send_tmp_hum()
 	checksum = twi_read_nack();			// get scale part
 	twi_stop();
 	
-	if (checksum == (humid_integral | humid_scale | temperature_integral | temperature_scale)) {
+	//sprintf (us1, "Humid: %d,%d\r\n", humid_integral, humid_scale);
+	/*itoa(humid_integral,us1,10);
+	uart_puts(us1);
+	
+	uart_putc(',');
+	
+	itoa(humid_scale,us1,10);
+	uart_puts(us1);
+	
+	uart_putc(',');
+	
+	itoa(temperature_integral,us1,10);
+	uart_puts(us1);
+	
+	uart_putc(',');
+	
+	itoa(humid_scale,us1,10);
+	uart_puts(us1);
+	
+	uart_putc(',');
+	
+	itoa(checksum,us1,10);
+	uart_puts(us1);
+	
+	uart_putc('.');*/
+	
+	if (checksum == (humid_integral + humid_scale + temperature_integral + temperature_scale)) {
 		humid_temp_flag = 1;	
-		temperature = temperature_integral * 10 + temperature_scale;	// 25.5 °C -> 255
+		temperature = (uint16_t)temperature_integral * 10 + (uint16_t)temperature_scale;	// 25.5 °C -> 255
+		humidity = (uint16_t)humid_integral * 10 + (uint16_t)humid_scale;
 	}
 	else {
-		humid_temp_flag = 0;
-		humidity = humid_integral * 10 + humid_scale;
+		humid_temp_flag = 0; // spis nastavit error flag
 	}
 	
 	
@@ -179,12 +239,22 @@ uint16_t get_lux(uint16_t data){
 }
 
 // read data from BH1750 light sensor
-void read_luminescence(){	//manual str.12
-	static state_bh state = STATE_IDLE;	// Current state of the FSM
-	//uint8_t addr = 0x5C >> 1;			// ADDR ? 0.7VCC -> H
-	uint8_t addr = 0x23 >> 1;			// ADDR ? 0.3VCC -> L
-	uint16_t result = -1;
+uint8_t read_luminescence(){	//manual str.12
+	//uart_puts("test");
 	luminescence_flag = 0;
+	static state_bh state = STATE_WRITE;	// Current state of the FSM
+	//uint8_t addr = 0x5C;			// ADDR ? 0.7VCC -> H
+	uint8_t addr = 0x23;			// ADDR ? 0.3VCC -> L
+	uint16_t data = -1;
+	uint8_t result = -1;
+	
+	/*result = twi_start((addr<<1) + TWI_WRITE);
+	//twi_write(0);
+	char us1 [] = "00000";
+	itoa(result, us1, 10);
+	uart_puts(us1);
+	twi_write(0b00010001);
+	twi_stop();*/
 	
 	/*twi_start((addr<<1) + TWI_READ);
 	
@@ -195,21 +265,31 @@ void read_luminescence(){	//manual str.12
 	switch (state)
 	{
 		case STATE_WRITE:
-			twi_start((addr<<1) + TWI_WRITE);
+			result = twi_start((addr<<1) + TWI_WRITE);
+			//char us1 [] = "00000";
+			//itoa(result,us1,10);
+			//uart_puts(us1);
 			twi_write(0b00010001);
 			twi_stop();
+			state = STATE_READ;
 		break;
 		case STATE_READ:
 			twi_start((addr<<1) + TWI_READ);
-			result = twi_read_ack() >> 8;
-			result += twi_read_nack();
+			data = twi_read_ack() >> 8;
+			data += twi_read_nack();
 			twi_stop();
 			
-			luminescence = get_lux(result);
+			luminescence = get_lux(data);
 			luminescence_flag = 1;
+			
+			/*char us1 [] = "00000";
+			itoa(luminescence, us1, 10);
+			uart_puts(us1);*/
+			
+			state = STATE_WRITE;
 		break;
 		default:
-			uart_puts("T1 reading error");
+			//uart_puts("T1 reading error"); // nastavit error flag?
 			state = STATE_WRITE;
 		break;
 	}
@@ -221,22 +301,30 @@ void read_luminescence(){	//manual str.12
  * Purpose:  Update Finite State Machine and test I2C slave addresses 
  *           between 8 and 119.
  **********************************************************************/
-ISR(TIMER0_OVF_vect)
+/*ISR(TIMER0_OVF_vect)
 {
-	uart_puts("TIM1_overflow\r\n");
-	read_and_send_tmp_hum();
+	//uart_puts("TIM1_overflow\r\n");
+	//read_and_send_tmp_hum();
 	//scanDevices();
-}
+}*/
 
 ISR(TIMER1_OVF_vect)
 {
+	static iteration = 1;
 	//read light sensitivity
-	uart_puts("TIM0_overflow\r\n");
-	read_luminescence();
+	
+	if (iteration == 4){
+		read_luminescence();
+		//read DHT12
+		read_and_send_tmp_hum();
+		iteration = 0;
+	}
+	
+	iteration++;
 	//scanDevices();
 }
 
-ISR(TIMER3_OVF_vect)
+ISR(TIMER0_OVF_vect)
 {
 	//update lcd
 	lcd_updateMenu();
