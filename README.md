@@ -29,8 +29,11 @@ Write your text here.
 <a name="hardware"></a>
 
 ## Hardware description
+* **ATMEGA 328P
+* **DHT12** - Humidity and temperature sensor
+* **GY30** - Light intensity sensor 
+* **SG90** - Servo motor
 
-Write your text here.
 
 <a name="libs"></a>
 
