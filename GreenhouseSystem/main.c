@@ -34,16 +34,24 @@
     STATE_ACK
 } state_t;*/
 
-#define LIGHT PC3
+#define LIGHT_LED		PB4		//Green
+//#define TEMPERATURE_LED PC2
+//#define HUMIDITY_LED	PC3
+#define PUMP_LED		PC2		// Output pin for controlling water pump
+#define TEMPERATURE_LED		PC3
+#define SourceVoltage	5000	// Voltage value of the source in mV
+#define wet_soil		400     // Define max value to consider soil 'wet'
+#define dry_soil		850     // Minimum value for dry soil
 
-typedef enum {              // FSM declaration
+typedef enum {             // FSM declaration
 	STATE_WRITE,
 	STATE_READ
 } state_bh;
 
 uint16_t humidity = 0;
 uint16_t temperature = 0;
-uint8_t humid_temp_flag = 0;
+uint8_t temp_flag = 0;
+uint8_t humid_flag = 0;
 
 uint16_t luminescence = 0;
 uint8_t luminescence_flag = 0;
@@ -56,31 +64,48 @@ uint8_t luminescence_flag = 0;
  *           Send information about scanning process to UART.
  * Returns:  none
  **********************************************************************/
+
+//predelat na itoa
 void lcd_updateMenu(){
 	char lcd_string[] = "00000000000000000";
 	
 	lcd_gotoxy(0, 0);
-	sprintf (lcd_string, "H:%d,%d  ", humidity / 10, humidity % 10);
+	itoa(humidity,lcd_string,10);
+	//sprintf (lcd_string, "H:%d,%d  ", humidity / 10, humidity % 10);
+	lcd_puts("H:");
 	lcd_puts(lcd_string);
+	
 	lcd_gotoxy(9, 0);
-	sprintf (lcd_string, "T:%d,%d  ", temperature / 10, temperature % 10);
+	itoa(temperature,lcd_string,10);
+	//sprintf (lcd_string, "T:%d,%d  ", temperature / 10, temperature % 10);
+	lcd_puts("T:");
 	lcd_puts(lcd_string);
+	
 	lcd_gotoxy(0, 1);
-	sprintf (lcd_string, "L:%d,%d  ", luminescence / 10, luminescence % 10);
+	//sprintf (lcd_string, "L:%d,%d  ", luminescence / 10, luminescence % 10);
+	itoa(luminescence,lcd_string,10);
+	lcd_puts("L:");
 	lcd_puts(lcd_string);
 	//lcd_puts("test");
 }
 
+void lcd_updateMenu();
 uint8_t read_and_send_tmp_hum();
 uint8_t read_luminescence();
-void updateLight(uint16_t intensity, uint8_t treshold);
+void updateLightLED(uint16_t intensity, uint8_t treshold);
 void servoLeft();
 void servoRight();
+void configureSoilSensor();
 
 int main(void)
 {
-	DDRC = DDRC | (1<<LIGHT);
-	PORTC = PORTC & ~(1<<LIGHT);
+	//init leds
+	/*DDRB = DDRB | (1<<LIGHT_LED);
+	PORTB = PORTB & ~(1<<LIGHT_LED);
+	DDRB = DDRB | (1<<PUMP_LED);
+	PORTB = PORTB & ~(1<<PUMP_LED);
+	DDRB = DDRB | (1<<TEMPERATURE_LED);
+	PORTB = PORTB & ~(1<<TEMPERATURE_LED);*/
 	
 	//PORTC = PORTC | (1<<LIGHT);
     // Initialize I2C (TWI)
@@ -97,6 +122,16 @@ int main(void)
 	lcd_command(1 << LCD_CGRAM);
 	
 	lcd_command(1 << LCD_DDRAM);
+	
+	GPIO_config_output(&DDRB, LIGHT_LED);
+	GPIO_config_output(&DDRC, PUMP_LED);
+	GPIO_config_output(&DDRC, TEMPERATURE_LED);
+	
+	GPIO_write_high(&PORTB, LIGHT_LED);
+	GPIO_write_high(&PORTC, PUMP_LED);
+	GPIO_write_high(&PORTC, TEMPERATURE_LED);
+	
+	configureSoilSensor();
 
     // Configure 16-bit Timer/Counter1 to update FSM
     // Set prescaler to 33 ms and enable interrupt
@@ -108,14 +143,14 @@ int main(void)
 
 	/*TIM2_overflow_16ms();
 	TIM2_overflow_interrupt_enable();*/
-	
-    // Enables interrupts by setting the global interrupt mask
-    sei();
-	//cli();
 
     // Put strings to ringbuffer for transmitting via UART
-	uart_puts("GH: init\r\n");
+	//uart_puts("GH: init\r\n");
 	lcd_updateMenu();
+	
+	// Enables interrupts by setting the global interrupt mask
+	sei();
+	//cli();
 
 	char uart_string[] = "00000000000000000";      // String for converting numbers by itoa()
 	
@@ -126,28 +161,31 @@ int main(void)
     while (1)
     {
 		//uart_puts("cycle\r\n");
-		if (humid_temp_flag){
-			//uart_puts("DHT12 read\r\n");
+		if (humid_flag){
 			if (humidity != previous_humidity){
 				previous_humidity = humidity;
-				sprintf (uart_string, "Humidity: %d,%d\r\n", humidity / 10, humidity % 10);
-				uart_puts(uart_string);
+				//sprintf (uart_string, "Humidity: %d,%d\r\n", humidity / 10, humidity % 10);
+				//uart_puts(uart_string);
 			}
+			humid_flag = 0;
+		}
+		if (temp_flag){
+			//uart_puts("DHT12 read\r\n");
 			if (temperature != previous_temperature){
 				previous_temperature = temperature;
-				sprintf (uart_string, "Temperature: %d,%d\r\n", temperature / 10, temperature % 10);
-				uart_puts(uart_string);
+				//sprintf (uart_string, "Temperature: %d,%d\r\n", temperature / 10, temperature % 10);
+				//uart_puts(uart_string);
 			}
-			humid_temp_flag = 0;
+			temp_flag = 0;
 		}
 		if (luminescence_flag){
 			//uart_puts("m: lum\r\n");
 			if (luminescence != previous_luminescence){
 				previous_luminescence = luminescence;
-				sprintf (uart_string, "Luminescence: %d,%d\r\n", luminescence / 10, luminescence % 10);
-				uart_puts(uart_string);
+				//sprintf (uart_string, "Luminescence: %d,%d\r\n", luminescence / 10, luminescence % 10);
+				//uart_puts(uart_string);
 			}
-			updateLight(luminescence, 300);	// treshold 10.0
+			updateLightLED(luminescence, 300);	// treshold 10.0
 			luminescence_flag = 0;
 		}
     }
@@ -156,35 +194,51 @@ int main(void)
     return 0;
 }
 
-void updateLight(uint16_t intensity, uint8_t treshold){
+void configureSoilSensor(){
+	//uart_puts("SoilConfig\r\n");
+	// Configure ADC to convert PC0[A0] analog value
+	// Set ADC reference to AVcc
+	ADMUX |= (1 << REFS0);
+	ADMUX &= ~(1 << REFS1);
+	// Set input channel to ADC0
+	ADMUX &= ~((1 << MUX0) | (1 << MUX1) | (1 << MUX2) | (1 << MUX3));
+	// Enable ADC module
+	ADCSRA |= (1 << ADEN);
+	// Enable conversion complete interrupt
+	ADCSRA |= (1 << ADIE);
+	// Set clock prescaler to 128
+	ADCSRA |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+}
+
+void updateLightLED(uint16_t intensity, uint8_t treshold){
 	//uart_puts("lightCheck\r\n");
 	if (intensity < treshold){ // luminescence < 10.0
-		PORTC = PORTC | (1<<LIGHT);
+		PORTC = PORTC | (1<<LIGHT_LED);
 	}
 	else {
-		PORTC = PORTC & ~(1<<LIGHT);
+		PORTC = PORTC & ~(1<<LIGHT_LED);
 	}
 }
 
 /*void servoLeft(){
 	GPIO_write_high(&PORTB, servo);
-	_delay_ms(1);
+	_delay_ms(0.7);
 	GPIO_write_low(&PORTB, servo);
-	_delay_ms(19);
+	_delay_ms(19.3);
 	
 };
 
 void servoRight(){
 	GPIO_write_high(&PORTB, servo);
-	_delay_ms(2);
+	_delay_ms(2.4);
 	GPIO_write_low(&PORTB, servo);
-	_delay_ms(18);
+	_delay_ms(17.6);
 	
 };*/
 
 uint8_t read_and_send_tmp_hum()
 {
-	humid_temp_flag = 0;
+	temp_flag = 0;
 	uint8_t addr = 0x5C;			// 7bit I2C address of humid+temp sensor, needs to be shifted to right for (n)ack
 
 	uint8_t humid_integral = 0;
@@ -207,6 +261,7 @@ uint8_t read_and_send_tmp_hum()
 	
 	twi_start((addr << 1) + TWI_READ);
 	
+	//tohle zahazuju
 	humid_integral = twi_read_ack();    // get fraction part 
 	humid_scale = twi_read_ack();			// get scale part
 	
@@ -217,12 +272,12 @@ uint8_t read_and_send_tmp_hum()
 	twi_stop();
 	
 	if (checksum == (humid_integral + humid_scale + temperature_integral + temperature_scale)) {
-		humid_temp_flag = 1;	
+		temp_flag = 1;	
 		temperature = (uint16_t)temperature_integral * 10 + (uint16_t)temperature_scale;	// 25.5 °C -> 255
-		humidity = (uint16_t)humid_integral * 10 + (uint16_t)humid_scale;
+		//humidity = (uint16_t)humid_integral * 10 + (uint16_t)humid_scale;
 	}
 	else {
-		humid_temp_flag = 0; // spis nastavit error flag
+		temp_flag = 0; // spis nastavit error flag
 	}
 	
 	
@@ -288,11 +343,14 @@ ISR(TIMER1_OVF_vect)
 	static iteration = 1;
 	//read light sensitivity
 	
+	// Start ADC conversion
+	ADCSRA |= (1 << ADSC);
+	
 	/*if (iteration % 2 == 0){
 		
 	}*/
 	
-	if (iteration == 4){
+	if (iteration == 4) {
 		read_luminescence();
 		//read DHT12
 		read_and_send_tmp_hum();
@@ -301,10 +359,62 @@ ISR(TIMER1_OVF_vect)
 	
 	iteration++;
 	//scanDevices();
+	/*lcd_gotoxy(10,1);
+	lcd_puts("ok");*/
 }
 
 ISR(TIMER0_OVF_vect)
 {
 	//update lcd
+	//uart_puts("lcd");
 	lcd_updateMenu();
+}
+
+/* -------------------------------------------------------------------*/
+/**
+ * ISR starts when ADC completes the conversion. Display soil moisture
+ * on LCD and send it to UART. high adc value correspond to dry soil and 
+ * low value wet soil
+ */
+ISR(ADC_vect)
+{
+	uint16_t soil_moisture = 0;
+	soil_moisture = ADCW;    // Copy ADC result to 16-bit variable
+	humidity = soil_moisture;
+	
+	humid_flag = 1;
+	
+	/*char lcd_string[8] = "00000000";
+	itoa(humidity,lcd_string,10);
+	lcd_gotoxy(10,1);
+	lcd_puts(lcd_string);*/
+
+	/*if (soil_moisture > dry_soil)
+	{
+		//uart_puts("Status: soil too dry, water now!");
+		GPIO_write_high(&PORTB, pump);
+	}
+	else if ((soil_moisture >= wet_soil) && (soil_moisture < dry_soil))
+	{
+		//uart_puts("Status: Soil moisture is perfect");
+		GPIO_write_low(&PORTB,pump);                  //turn pump off
+	}
+	
+	else if (soil_moisture < wet_soil)
+	{
+		//uart_puts("Status: Soil too wet, stop watering");
+		GPIO_write_low(&PORTB, pump);                   //turn pump off
+	}*/
+	
+	// clear decimal and hex positions
+	/*lcd_gotoxy(6,0);
+	lcd_puts("        ");
+
+	itoa(soil_moisture, lcd_string, 10);    // Convert to string in decimal
+	lcd_gotoxy(6,0);
+	lcd_puts(lcd_string);*/
+	
+	/*uart_puts("Soil status: ");
+	uart_puts(lcd_string);
+	uart_puts("\r\n");*/
 }
