@@ -29,11 +29,18 @@ Write your text here.
 <a name="hardware"></a>
 
 ## Hardware description
-* **ATMEGA 328P
+* **ATMEGA 328P**
 * **DHT12** - Humidity and temperature sensor
 * **GY30** - Light intensity sensor 
+  * Range: 0–65535LUX
+  * Operation Voltage: 3 to 5 V
 * **SG90** - Servo motor
-
+  * Operating Voltage = 4.0 to 7.2 V
+  * Position "0" (1.5 ms pulse) is middle, "90" (~2ms pulse) is all the way to the righ, "-90" (~1ms pulse) is all the way to the left.
+* **Soil mouisture sensor**
+  * LM393 comparator
+  * Operation Voltage: 3.3 to 5 V
+  * Analog output
 
 <a name="libs"></a>
 
