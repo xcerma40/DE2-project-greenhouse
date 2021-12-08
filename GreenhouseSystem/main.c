@@ -28,11 +28,13 @@
 #include "gpio.h"
 
 /* Variables ---------------------------------------------------------*/
-typedef enum {              // FSM declaration
+/*typedef enum {              // FSM declaration
     STATE_IDLE = 1,
     STATE_SEND,
     STATE_ACK
-} state_t;
+} state_t;*/
+
+#define LIGHT PC3
 
 typedef enum {              // FSM declaration
 	STATE_WRITE,
@@ -71,11 +73,16 @@ void lcd_updateMenu(){
 
 uint8_t read_and_send_tmp_hum();
 uint8_t read_luminescence();
+void updateLight(uint16_t intensity, uint8_t treshold);
 void servoLeft();
 void servoRight();
 
 int main(void)
 {
+	DDRC = DDRC | (1<<LIGHT);
+	PORTC = PORTC & ~(1<<LIGHT);
+	
+	//PORTC = PORTC | (1<<LIGHT);
     // Initialize I2C (TWI)
     twi_init();
 
@@ -140,6 +147,7 @@ int main(void)
 				sprintf (uart_string, "Luminescence: %d,%d\r\n", luminescence / 10, luminescence % 10);
 				uart_puts(uart_string);
 			}
+			updateLight(luminescence, 300);	// treshold 10.0
 			luminescence_flag = 0;
 		}
     }
@@ -148,7 +156,17 @@ int main(void)
     return 0;
 }
 
-void servoLeft(){
+void updateLight(uint16_t intensity, uint8_t treshold){
+	//uart_puts("lightCheck\r\n");
+	if (intensity < treshold){ // luminescence < 10.0
+		PORTC = PORTC | (1<<LIGHT);
+	}
+	else {
+		PORTC = PORTC & ~(1<<LIGHT);
+	}
+}
+
+/*void servoLeft(){
 	GPIO_write_high(&PORTB, servo);
 	_delay_ms(1);
 	GPIO_write_low(&PORTB, servo);
@@ -162,7 +180,7 @@ void servoRight(){
 	GPIO_write_low(&PORTB, servo);
 	_delay_ms(18);
 	
-};
+};*/
 
 uint8_t read_and_send_tmp_hum()
 {
@@ -262,20 +280,17 @@ uint8_t read_luminescence(){	//manual str.12
 /* Interrupt service routines ----------------------------------------*/
 /**********************************************************************
  * Function: Timer/Counter1 overflow interrupt
- * Purpose:  Update Finite State Machine and test I2C slave addresses 
- *           between 8 and 119.
+ * Purpose:  Service routine for slow actions. Every second, Humidity and temperature is being
+ *           read from DHT12 and luminescence from BH1750.
  **********************************************************************/
-/*ISR(TIMER0_OVF_vect)
-{
-	//uart_puts("TIM1_overflow\r\n");
-	//read_and_send_tmp_hum();
-	//scanDevices();
-}*/
-
 ISR(TIMER1_OVF_vect)
 {
 	static iteration = 1;
 	//read light sensitivity
+	
+	/*if (iteration % 2 == 0){
+		
+	}*/
 	
 	if (iteration == 4){
 		read_luminescence();
