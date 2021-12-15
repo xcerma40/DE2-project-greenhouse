@@ -51,8 +51,6 @@ Our aim was to make monitoring system for greenhouse with automatic control of s
 
 ## Libraries description
 
-Write your text here.
-
 <a name="main"></a>
 
 ## Main application
