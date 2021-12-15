@@ -197,6 +197,198 @@ uint8_t read_luminescence(volatile uint8_t *luminescence_flag){	//manual str.12
 	return -1;
 }
 ```
+* **output peripherals.c**
+	* Library with functions for LCD, LEDs and servo
+```c
+/*
+ * output_peripherals.c
+ *
+ * Created: 14.12.2021 12:36:31
+ *  Author: cerma
+ */ 
+
+#include "output_peripherals.h"
+
+void lcd_fill_whitespace(uint8_t length){
+	for (uint8_t i = 0; i < length; i++){
+		lcd_putc(' ');
+	}
+}
+
+void init_lcd(){
+	// Initialize LCD display
+	lcd_init(LCD_DISP_ON);
+
+	// Set pointer to beginning of CGRAM memory
+	lcd_command(1 << LCD_CGRAM);
+	lcd_command(1 << LCD_DDRAM);
+	
+	lcd_update_menu(1,1,1);
+}
+
+//predelat na itoa
+void lcd_update_menu(float soil_moisture, uint16_t temperature, uint16_t luminescence){
+	char lcd_string[] = "000000000000000";
+	uint8_t digits_length = 0;
+	
+	lcd_gotoxy(0, 0);
+	lcd_puts("S:");
+	//sprintf (lcd_string, "H:%u,%u  ", soil_moisture / 100, soil_moisture % 100);
+	dtostrf(soil_moisture,3,2,lcd_string);
+	//digits_length += strlen(lcd_string);
+	lcd_puts(lcd_string);
+	//lcd_putc(',');
+	//itoa(soil_moisture % 100,lcd_string,10);
+	//lcd_puts(lcd_string);
+	//lcd_fill_whitespace(7 - digits_length);
+	
+	//digits_length = 0;
+	lcd_gotoxy(9, 0);
+	lcd_puts("T:");
+	//sprintf (lcd_string, "T:%u,%u  ", temperature / 10, temperature % 10);
+	itoa(temperature / 10,lcd_string,10);
+	//digits_length += strlen(lcd_string);
+	lcd_puts(lcd_string);
+	lcd_putc('.');
+	itoa(temperature % 10,lcd_string,10);
+	//digits_length += strlen(lcd_string);
+	lcd_puts(lcd_string);
+	//lcd_fill_whitespace(4 - digits_length);
+	
+	//digits_length = 0;
+	lcd_gotoxy(0, 1);
+	lcd_puts("L:");
+	//sprintf (lcd_string, "L:%u,%u  ", luminescence / 10, luminescence % 10);
+	itoa(luminescence / 10,lcd_string,10);
+	//digits_length += strlen(lcd_string);
+	lcd_puts(lcd_string);
+	lcd_putc('.');
+	itoa(luminescence % 10,lcd_string,10);
+	lcd_puts(lcd_string);
+	//lcd_fill_whitespace(7 - digits_length);
+}
+
+void led_turn_on(volatile uint8_t *reg_name, uint8_t led_pin){
+	GPIO_write_high(reg_name, led_pin);
+}
+
+void led_turn_off(volatile uint8_t *reg_name, uint8_t led_pin){
+	GPIO_write_low(reg_name, led_pin);
+}
+
+void light_control_init(uint8_t light_led, uint8_t *led_port_register, uint8_t servo_pin, uint8_t *servo_port_register){
+	// open pelmet (servo)
+	servo_right(servo_port_register,servo_pin);
+	// turn off light (led)
+	led_turn_off(led_port_register, light_led);
+}
+//todo
+void light_control_update(uint16_t luminescence, uint8_t light_led, volatile uint8_t *led_port_register, uint8_t servo_pin, volatile uint8_t *servo_port_register){
+	
+	// whether its too dark or too shiny, close pelmet (servo) and turn artificial lighting on (led)
+	if (luminescence <= TRESHOLD_LUMINESCENCE_DARK || luminescence >= TRESHOLD_LUMINESCENCE_LIGHT){
+		servo_left(servo_port_register, servo_pin);
+		led_turn_on(led_port_register, light_led);
+	}
+	// if light conditions are optimal, open pelmet (servo) and turn lights off (led)
+	else {
+		servo_right(servo_port_register, servo_pin);
+		led_turn_off(led_port_register, light_led);
+	}
+}
+//todo
+void temperature_control_update(uint16_t luminescence, uint8_t light_led, uint8_t *led_port_register, uint8_t servo_pin, uint8_t *servo_port_register){
+	static state_lc actual_state = LC_STATE_OPTIMAL;
+	static state_lc previous_state = LC_STATE_OPTIMAL;
+	
+	/*switch(actual_state){
+		case : LC_STATE_OPTIMAL
+			if (luminescence <= TRESHOLD_LUMINESCENCE_DARK || luminescence >= TRESHOLD_LUMINESCENCE_LIGHT){
+				servo_left(servo_port_register, servo_pin);
+				led_turn_on(led_port_register, light_led);
+				previous_state = actual_state;
+			}
+		break;
+		case : LC_STATE_DL
+			
+		break;
+		default:
+			state = LC_STATE_OPTIMAL;
+		break;
+	}*/
+	
+	// whether its too dark or too shiny, close pelmet (servo) and turn artificial lighting on (led)
+	if (luminescence <= TRESHOLD_LUMINESCENCE_DARK || luminescence >= TRESHOLD_LUMINESCENCE_LIGHT){
+		servo_left(servo_port_register, servo_pin);
+		led_turn_on(led_port_register, light_led);
+	}
+	// if light conditions are optimal, open pelmet (servo) and turn lights off (led)
+	else {
+		servo_right(servo_port_register, servo_pin);
+		led_turn_off(led_port_register, light_led);
+	}
+}
+```
+* **servo.c**
+```c
+/*
+ * GPIO library for AVR-GCC.
+ * ATmega328P (Arduino Uno), 16 MHz, AVR 8-bit Toolchain 3.6.2
+ * servo.c
+ *
+ * Created: 14.12.2021 0:46:24
+ * Author: Vaclav Cermak
+ */ 
+
+/* Includes ----------------------------------------------------------*/
+#include "servo.h"
+#include "../library/gpio.h"
+
+/* Function definitions ----------------------------------------------*/
+/**********************************************************************
+ * Function: servo_left()
+ * Purpose:  Rotate servo fully to the left by sending input signal of length 20ms
+ *           in ratio 0,7ms (high) : 19,3ms (low)
+ * Input:    reg_name - Address of servos Port register, such as &PORTB
+ *           servo_pin - Pin to which servo is connected
+ * Returns:  none
+ **********************************************************************/
+void servo_left(volatile uint8_t *reg_name, uint8_t servo_pin){
+	GPIO_write_high(&PORTB, servo_pin);
+	_delay_us(700);
+	GPIO_write_low(&PORTB, servo_pin);
+	_delay_us(300);
+	_delay_ms(19);
+};
+
+/**********************************************************************
+ * Function: servo_right()
+ * Purpose:  Rotate servo fully to the right by sending input signal of length 20ms
+ *           in ratio 2,4ms (high) : 17,6ms (low)
+ * Input:    reg_name - Address of servos Port register, such as &PORTB
+ *           servo_pin - Pin to which servo is connected
+ * Returns:  none
+ **********************************************************************/
+void servo_right(volatile uint8_t *reg_name, uint8_t servo_pin){
+	GPIO_write_high(&PORTB, servo_pin);
+	_delay_us(2400);
+	GPIO_write_low(&PORTB, servo_pin);
+	_delay_us(600);
+	_delay_ms(17);
+};
+
+/**********************************************************************
+ * Function: servo_init()
+ * Purpose:  Initialize servo in Data Direction Register
+ * Input:    reg_name - Address of Data Direction Register, such as &DDRB
+ *           servo_pin - Pin to which servo is connected
+ * Returns:  none
+ **********************************************************************/
+void servo_init(volatile uint8_t *reg_name, uint8_t servo_pin){
+	GPIO_config_output(reg_name, servo_pin);	
+}
+```
+
 <a name="main"></a>
 
 ## Main application
