@@ -24,13 +24,16 @@ Link to the GitHub repository:
 
 ## Project objectives
 
-Write your text here.
+Our aim was to make monitoring system for greenhouse with automatic control of soil moisture, temperature and light intensity. 
 
 <a name="hardware"></a>
 
 ## Hardware description
 * **ATMEGA 328P**
 * **DHT12** - Humidity and temperature sensor
+  * we are using it for temperature only
+  * Range: -20 to 60°C
+  * Operation Voltage: 2.7 to .5 V
 * **GY30** - Light intensity sensor 
   * Range: 0–65535LUX
   * Operation Voltage: 3 to 5 V
@@ -41,6 +44,8 @@ Write your text here.
   * LM393 comparator
   * Operation Voltage: 3.3 to 5 V
   * Analog output
+
+
 
 <a name="libs"></a>
 
