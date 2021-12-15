@@ -66,6 +66,7 @@ Our aim was to make monitoring system for greenhouse with automatic control of s
 * **adc_sensors.c**
   * library for soil moisture sensor
   ```c
+  
  /* adc_sensors.c
  *
  * Created: 14.12.2021 12:23:41
@@ -88,6 +89,7 @@ void init_soil_sensor(volatile uint8_t *admux_register, volatile uint8_t *adcsra
 	// Set clock prescaler to 128
 	*adcsra_register |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 }
+
 ```
 
 <a name="main"></a>
