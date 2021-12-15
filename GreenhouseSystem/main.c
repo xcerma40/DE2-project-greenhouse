@@ -27,6 +27,7 @@
 #include <avr/interrupt.h>  // Interrupts standard C library for AVR-GCC
 #include <stdlib.h>         // C library. Needed for conversion function
 #include <stdio.h>         // C library. Needed for conversion function
+#include <util/delay.h>
 #include "timer.h"          // Timer library for AVR-GCC
 #include "uart.h"           // Peter Fleury's UART library
 #include "twi.h"            // TWI library for AVR-GCC
@@ -47,6 +48,7 @@ uint16_t luminescence = 0;
 uint8_t temp_flag = 0;
 uint8_t humid_flag = 0;
 uint8_t luminescence_flag = 0;
+float soil_moisture = 0;        // soil moisture in %
 
 
 /* Function declarations ----------------------------------------------*/
@@ -103,7 +105,7 @@ int main(void)
 					updateLED(luminescence, 300, LIGHT_LED);	
 				}
 				else if (luminescence > 800){
-					servoRight()
+					servoRight();
 				}
 			}
 			luminescence_flag = 0;
@@ -261,13 +263,13 @@ uint8_t read_temperature()
 	twi_start((addr << 1) + TWI_READ);
 	
 	//tohle zahazuju
-	humid_integral = twi_read_ack();    // get fraction part 
-	humid_scale = twi_read_ack();			// get scale part
+	humid_integral = twi_read_ack();            // get fraction part 
+	humid_scale = twi_read_ack();			    // get scale part
 	
-	temperature_integral = twi_read_ack();    // get fraction part
+	temperature_integral = twi_read_ack();      // get fraction part
 	temperature_scale = twi_read_ack();			// get scale part
 
-	checksum = twi_read_nack();			// get scale part
+	checksum = twi_read_nack();			        // get scale part
 	twi_stop();
 	
 	if (checksum == (humid_integral + humid_scale + temperature_integral + temperature_scale)) {
@@ -367,9 +369,7 @@ ISR(TIMER0_OVF_vect)
  */
 ISR(ADC_vect)
 {
-	uint16_t soil_moisture = 0;
-	soil_moisture = ADCW;    // Copy ADC result to 16-bit variable
-	humidity = soil_moisture;
-	
-	humid_flag = 1;
+	uint16_t adc_value = 0;
+	adc_value = ADCW;    // Copy ADC result to 16-bit variable
+    soil_moisture = 100 -(adc_value*100.00)/1023.00;  // soil moisture in %
 }
