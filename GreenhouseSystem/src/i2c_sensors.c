@@ -52,7 +52,7 @@ uint8_t read_temperature(volatile uint8_t *temp_flag)
 /************************************************************************
  * Function: getCorrect lux value from data							*
  * Purpose:  data needs to be shifted, last bit is 2^-1 (+5). Value is 10 times higher.
-/************************************************************************/
+ ************************************************************************/
 uint16_t get_lux(uint16_t data){
 	if (data & 1){
 		return (((data >> 1) * 10) + 5) / 1.2;

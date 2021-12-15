@@ -21,49 +21,49 @@ void init_lcd(){
 	lcd_command(1 << LCD_CGRAM);
 	lcd_command(1 << LCD_DDRAM);
 	
-	lcd_update_menu(0,0,0);
+	lcd_update_menu(1,1,1);
 }
 
 //predelat na itoa
-void lcd_update_menu(uint16_t humidity, uint16_t temperature, uint16_t luminescence){
-	char lcd_string[] = "00000000000000000";
+void lcd_update_menu(float soil_moisture, uint16_t temperature, uint16_t luminescence){
+	char lcd_string[] = "000000000000000";
 	uint8_t digits_length = 0;
 	
 	lcd_gotoxy(0, 0);
-	lcd_puts("H:");
-	//sprintf (lcd_string, "H:%d,%d  ", humidity / 10, humidity % 10);
-	itoa(humidity / 10,lcd_string,10);
-	digits_length += strlen(lcd_string);
+	lcd_puts("S:");
+	//sprintf (lcd_string, "H:%u,%u  ", soil_moisture / 100, soil_moisture % 100);
+	dtostrf(soil_moisture,3,2,lcd_string);
+	//digits_length += strlen(lcd_string);
 	lcd_puts(lcd_string);
-	lcd_putc(',');
-	itoa(humidity % 10,lcd_string,10);
-	lcd_puts(lcd_string);
-	lcd_fill_whitespace(7 - digits_length);
+	//lcd_putc(',');
+	//itoa(soil_moisture % 100,lcd_string,10);
+	//lcd_puts(lcd_string);
+	//lcd_fill_whitespace(7 - digits_length);
 	
-	digits_length = 0;
+	//digits_length = 0;
 	lcd_gotoxy(9, 0);
 	lcd_puts("T:");
-	//sprintf (lcd_string, "T:%d,%d  ", temperature / 10, temperature % 10);
+	//sprintf (lcd_string, "T:%u,%u  ", temperature / 10, temperature % 10);
 	itoa(temperature / 10,lcd_string,10);
-	digits_length += strlen(lcd_string);
+	//digits_length += strlen(lcd_string);
 	lcd_puts(lcd_string);
-	lcd_putc(',');
+	lcd_putc('.');
 	itoa(temperature % 10,lcd_string,10);
-	digits_length += strlen(lcd_string);
+	//digits_length += strlen(lcd_string);
 	lcd_puts(lcd_string);
-	lcd_fill_whitespace(4 - digits_length);
+	//lcd_fill_whitespace(4 - digits_length);
 	
-	digits_length = 0;
+	//digits_length = 0;
 	lcd_gotoxy(0, 1);
 	lcd_puts("L:");
-	//sprintf (lcd_string, "L:%d,%d  ", luminescence / 10, luminescence % 10);
+	//sprintf (lcd_string, "L:%u,%u  ", luminescence / 10, luminescence % 10);
 	itoa(luminescence / 10,lcd_string,10);
-	digits_length += strlen(lcd_string);
+	//digits_length += strlen(lcd_string);
 	lcd_puts(lcd_string);
-	lcd_putc(',');
+	lcd_putc('.');
 	itoa(luminescence % 10,lcd_string,10);
 	lcd_puts(lcd_string);
-	lcd_fill_whitespace(7 - digits_length);
+	//lcd_fill_whitespace(7 - digits_length);
 }
 
 void led_turn_on(volatile uint8_t *reg_name, uint8_t led_pin){
@@ -81,7 +81,7 @@ void light_control_init(uint8_t light_led, uint8_t *led_port_register, uint8_t s
 	led_turn_off(led_port_register, light_led);
 }
 //todo
-void light_control_update(uint16_t luminescence, uint8_t light_led, uint8_t *led_port_register, uint8_t servo_pin, uint8_t *servo_port_register){
+void light_control_update(uint16_t luminescence, uint8_t light_led, volatile uint8_t *led_port_register, uint8_t servo_pin, volatile uint8_t *servo_port_register){
 	
 	// whether its too dark or too shiny, close pelmet (servo) and turn artificial lighting on (led)
 	if (luminescence <= TRESHOLD_LUMINESCENCE_DARK || luminescence >= TRESHOLD_LUMINESCENCE_LIGHT){

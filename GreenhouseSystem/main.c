@@ -36,15 +36,16 @@
 #include "src/i2c_sensors.h"			// Functions for handling output peripherals as LCD and LEDs
 #include "src/output_peripherals.h"		// 
 #include "src/servo.h"					// Servo handling
+#include "src/adc_sensors.h"			// ADC sensors as soil moisture
 
 /* Variables ---------------------------------------------------------*/
 
-uint16_t humidity = 0;
+float soil_moisture = 0.0;
 uint16_t temperature = 0;
 uint16_t luminescence = 0;
 // flags ---------------------------------------------------------------
 uint8_t temp_flag = 0;
-uint8_t humid_flag = 0;
+uint8_t soil_moisture_flag = 0;
 uint8_t luminescence_flag = 0;
 
 
@@ -53,6 +54,7 @@ uint8_t luminescence_flag = 0;
 void green_house_setup();
 void updateLED(uint16_t intensity, uint8_t treshold, uint8_t led);
 void init_leds();
+void init_interrupts();
 //void initLCD();
 //void lcd_updateMenu();
 
@@ -66,20 +68,21 @@ void init_leds();
 int main(void)
 {
 	green_house_setup();
+	//uart_puts("GH: Init\r\n");
 	
-	uint16_t previous_humidity = UINT16_MAX;
+	float previous_soil_moisture = 0.0;
 	uint16_t previous_temperature = UINT16_MAX;
 	uint16_t previous_luminescence = UINT16_MAX;
     // Infinite loop
     while (1)
     {
-		if (humid_flag){
-			if (humidity != previous_humidity){
-				previous_humidity = humidity;
+		if (soil_moisture_flag){
+			//if (soil_moisture != previous_soil_moisture){
+				previous_soil_moisture = soil_moisture;
 				//updateLED(luminescence, 400, PUMP_LED);
 				//todo
-			}
-			humid_flag = 0;
+			//}
+			soil_moisture_flag = 0;
 		}
 		if (temp_flag){
 			if (temperature != previous_temperature){
@@ -106,14 +109,16 @@ int main(void)
 
 
 void green_house_setup(){
+	 init_interrupts();
 	 twi_init();
-
+	 init_lcd();
+	 
 	 // Initialize UART to asynchronous, 8N1, 9600
 	 uart_init(UART_BAUD_SELECT(9600, F_CPU));
+	 uart_puts("test");
 	 
 	 init_leds();
 	 init_soil_sensor(&ADMUX, &ADCSRA);
-	 init_lcd();
 	 
 	 servo_init(&DDRB, PELMET_SERVO_PIN);
 	 
@@ -194,7 +199,7 @@ ISR(TIMER1_OVF_vect)
  **********************************************************************/
 ISR(TIMER0_OVF_vect)
 {
-	lcd_update_menu(humidity, temperature, luminescence);
+	lcd_update_menu(soil_moisture, temperature, luminescence);
 }
 
 
@@ -207,6 +212,18 @@ ISR(TIMER0_OVF_vect)
  **********************************************************************/
 ISR(ADC_vect)
 {
-	humidity = ADCW;    // Copy ADC result to 16-bit variable	
-	humid_flag = 1;
+	char lcdstr [] = "0000000000";
+	uint16_t adc_value = 0;
+	adc_value = ADCW;    // Copy ADC result to 16-bit variable
+	soil_moisture = 100 - ((float)adc_value/1023.0)*100;  // soil moisture in %
+	//soil_moisture = ADCW / 1.0;
+	soil_moisture_flag = 1;
+	
+	/*lcd_gotoxy(0, 0);
+	dtostrf(soil_moisture,3,2,lcdstr);
+	lcd_puts(lcdstr);*/
+	
+	/*uint16_t data = ADCW;
+	soil_moisture = 100 - (ADCW);    // Copy ADC result to 16-bit variable	
+	soil_moisture_flag = 1;*/
 }
