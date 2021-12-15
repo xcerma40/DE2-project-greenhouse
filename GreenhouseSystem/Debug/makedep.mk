@@ -16,5 +16,7 @@ src\adc_sensors.c
 
 src\i2c_sensors.c
 
+src\output peripherals.c
+
 src\servo.c
 

@@ -11,7 +11,7 @@
 
 #include <avr/io.h>         // AVR device-specific IO definitions
 
-void initSoilSensor(volatile uint8_t *admux_register, volatile uint8_t *adcsra_register);
+void init_soil_sensor(volatile uint8_t *admux_register, volatile uint8_t *adcsra_register);
 
 
 #endif /* ADC_SENSORS_H_ */

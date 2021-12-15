@@ -14,8 +14,8 @@
 /* Variables ---------------------------------------------------------*/
 
 typedef enum {             // FSM for luminescence sensor
-	STATE_WRITE,
-	STATE_READ
+	BH_STATE_WRITE,
+	BH_STATE_READ
 } state_bh;
 
 

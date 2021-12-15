@@ -7,7 +7,7 @@
 
 #include "adc_sensors.h"
 
-void initSoilSensor(volatile uint8_t *admux_register, volatile uint8_t *adcsra_register){
+void init_soil_sensor(volatile uint8_t *admux_register, volatile uint8_t *adcsra_register){
 	// Configure ADC to convert PC0[A0] analog value
 	// Set ADC reference to AVcc
 	*admux_register |= (1 << REFS0);

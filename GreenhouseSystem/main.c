@@ -11,14 +11,15 @@
 
 /* Defines -----------------------------------------------------------*/
 #ifndef F_CPU
-#define F_CPU			16000000	// CPU frequency in Hz required for UART_BAUD_SELECT
+#define F_CPU				16000000	// CPU frequency in Hz required for UART_BAUD_SELECT
 #endif
-#define LIGHT_LED		PB4			//Green
-#define PUMP_LED		PC2			// Output pin for controlling water pump
-#define TEMPERATURE_LED	PC3
-#define SERVO_PIN		PB2
-#define wet_soil		400			// Define max value to consider soil 'wet'
-#define dry_soil		850			// Minimum value for dry soil
+#define LIGHT_LED			PB4			// Green
+#define PUMP_LED			PC2			// Output pin for controlling water pump
+#define TEMPERATURE_LED		PC3
+#define PELMET_SERVO_PIN	PB2
+#define WINDOW_SERVO_PIN	PB1			// ???
+#define wet_soil			400			// Define max value to consider soil 'wet'
+#define dry_soil			850			// Minimum value for dry soil
 
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>         // AVR device-specific IO definitions
@@ -32,8 +33,9 @@
 #include "library/lcd.h"				// Tomas Fryza's Library for LCD manipulation
 #include "library/lcd_definitions.h"	// Definitions for LCD library
 #include "library/gpio.h"				// Library for pin input/output manipulation
+#include "src/i2c_sensors.h"			// Functions for handling output peripherals as LCD and LEDs
+#include "src/output_peripherals.h"		// 
 #include "src/servo.h"					// Servo handling
-#include "src/i2c_sensors.h"			// 
 
 /* Variables ---------------------------------------------------------*/
 
@@ -48,11 +50,11 @@ uint8_t luminescence_flag = 0;
 
 /* Function declarations ----------------------------------------------*/
 
-void initialSetup();
+void green_house_setup();
 void updateLED(uint16_t intensity, uint8_t treshold, uint8_t led);
-void initLEDs();
-void initLCD();
-void lcd_updateMenu();
+void init_leds();
+//void initLCD();
+//void lcd_updateMenu();
 
 /* Function definitions ----------------------------------------------*/
 /**********************************************************************
@@ -63,7 +65,7 @@ void lcd_updateMenu();
 
 int main(void)
 {
-	initialSetup();
+	green_house_setup();
 	
 	uint16_t previous_humidity = UINT16_MAX;
 	uint16_t previous_temperature = UINT16_MAX;
@@ -74,26 +76,24 @@ int main(void)
 		if (humid_flag){
 			if (humidity != previous_humidity){
 				previous_humidity = humidity;
-				updateLED(luminescence, 400, PUMP_LED);
+				//updateLED(luminescence, 400, PUMP_LED);
+				//todo
 			}
 			humid_flag = 0;
 		}
 		if (temp_flag){
 			if (temperature != previous_temperature){
 				previous_temperature = temperature;
-				updateLED(luminescence, 200, TEMPERATURE_LED);
+				//updateLED(luminescence, 200, TEMPERATURE_LED);
+				//todo
 			}
 			temp_flag = 0;
 		}
 		if (luminescence_flag){
 			if (luminescence != previous_luminescence){
 				previous_luminescence = luminescence;
-				if (luminescence < 300){
-					updateLED(luminescence, 300, LIGHT_LED);	
-				}
-				else if (luminescence > 800){
-					servo_right(&PORTB, SERVO_PIN);
-				}
+				
+				light_control_update(luminescence, LIGHT_LED, &PORTB, PELMET_SERVO_PIN, &PORTB);
 			}
 			luminescence_flag = 0;
 		}
@@ -103,26 +103,25 @@ int main(void)
     return 0;
 }
 
-void initialSetup(){
+
+
+void green_house_setup(){
 	 twi_init();
 
 	 // Initialize UART to asynchronous, 8N1, 9600
 	 uart_init(UART_BAUD_SELECT(9600, F_CPU));
 	 
-	 initLEDs();
-	 initSoilSensor(&ADMUX, &ADCSRA);
-	 initLCD();
+	 init_leds();
+	 init_soil_sensor(&ADMUX, &ADCSRA);
+	 init_lcd();
 	 
-	 servo_init(&DDRB, SERVO_PIN);
+	 servo_init(&DDRB, PELMET_SERVO_PIN);
 	 
 	 // Enables interrupts by setting the global interrupt mask
 	 sei();
-	 //cli();
 }
 
-void initInterrupts(){
-	// Configure 16-bit Timer/Counter1 to update FSM
-	// Set prescaler to 33 ms and enable interrupt
+void init_interrupts(){
 	TIM0_overflow_16ms();
 	TIM0_overflow_interrupt_enable();
 		 
@@ -130,50 +129,11 @@ void initInterrupts(){
 	TIM1_overflow_interrupt_enable();
 }
 
-void initLCD(){
-	// Initialize LCD display
-	lcd_init(LCD_DISP_ON);
 
-	// Set pointer to beginning of CGRAM memory
-	lcd_command(1 << LCD_CGRAM);
-	lcd_command(1 << LCD_DDRAM);
-	
-	lcd_updateMenu();
-}
 
-//predelat na itoa
-void lcd_updateMenu(){
-	char lcd_string[] = "00000000000000000";
-	
-	lcd_gotoxy(0, 0);
-	lcd_puts("H:");
-	//sprintf (lcd_string, "H:%d,%d  ", humidity / 10, humidity % 10);
-	itoa(humidity / 10,lcd_string,10);
-	lcd_puts(lcd_string);
-	lcd_putc(',');
-	itoa(humidity % 10,lcd_string,10);
-	lcd_puts(lcd_string);
-	
-	lcd_gotoxy(9, 0);
-	lcd_puts("T:");
-	//sprintf (lcd_string, "T:%d,%d  ", temperature / 10, temperature % 10);
-	itoa(temperature / 10,lcd_string,10);
-	lcd_puts(lcd_string);
-	lcd_putc(',');
-	itoa(temperature % 10,lcd_string,10);
-	lcd_puts(lcd_string);
-	
-	lcd_gotoxy(0, 1);
-	lcd_puts("L:");
-	//sprintf (lcd_string, "L:%d,%d  ", luminescence / 10, luminescence % 10);
-	itoa(luminescence / 10,lcd_string,10);
-	lcd_puts(lcd_string);
-	lcd_putc(',');
-	itoa(luminescence % 10,lcd_string,10);
-	lcd_puts(lcd_string);
-}
 
-void initLEDs(){
+
+void init_leds(){
 	GPIO_config_output(&DDRB, LIGHT_LED);
 	GPIO_config_output(&DDRC, PUMP_LED);
 	GPIO_config_output(&DDRC, TEMPERATURE_LED);
@@ -202,7 +162,7 @@ void updateLED(uint16_t intensity, uint8_t treshold, uint8_t led){
  **********************************************************************/
 ISR(TIMER1_OVF_vect)
 {
-	static iteration = 1;
+	static uint8_t iteration = 1;
 	uint16_t result = 0;
 	
 	// Start ADC conversion
@@ -234,7 +194,7 @@ ISR(TIMER1_OVF_vect)
  **********************************************************************/
 ISR(TIMER0_OVF_vect)
 {
-	lcd_updateMenu();
+	lcd_update_menu(humidity, temperature, luminescence);
 }
 
 

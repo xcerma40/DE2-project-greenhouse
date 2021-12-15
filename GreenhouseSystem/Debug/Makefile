@@ -46,6 +46,7 @@ C_SRCS +=  \
 ../main.c \
 ../src/adc_sensors.c \
 ../src/i2c_sensors.c \
+../src/output\ peripherals.c \
 ../src/servo.c
 
 
@@ -63,6 +64,7 @@ library/uart.o \
 main.o \
 src/adc_sensors.o \
 src/i2c_sensors.o \
+src/output\ peripherals.o \
 src/servo.o
 
 OBJS_AS_ARGS +=  \
@@ -73,6 +75,7 @@ library/uart.o \
 main.o \
 src/adc_sensors.o \
 src/i2c_sensors.o \
+"src/output peripherals.o" \
 src/servo.o
 
 C_DEPS +=  \
@@ -83,6 +86,7 @@ library/uart.d \
 main.d \
 src/adc_sensors.d \
 src/i2c_sensors.d \
+src/output\ peripherals.d \
 src/servo.d
 
 C_DEPS_AS_ARGS +=  \
@@ -93,6 +97,7 @@ library/uart.d \
 main.d \
 src/adc_sensors.d \
 src/i2c_sensors.d \
+"src/output peripherals.d" \
 src/servo.d
 
 OUTPUT_FILE_PATH +=GreenhouseSystem.elf
@@ -152,6 +157,13 @@ src/adc_sensors.o: ../src/adc_sensors.c
 	
 
 src/i2c_sensors.o: ../src/i2c_sensors.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DDEBUG  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.6.364\include"  -Og -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -g2 -Wall -mmcu=atmega328p -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.6.364\gcc\dev\atmega328p" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+src/output\ peripherals.o: ../src/output\ peripherals.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DDEBUG  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.6.364\include"  -Og -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -g2 -Wall -mmcu=atmega328p -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.6.364\gcc\dev\atmega328p" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

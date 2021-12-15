@@ -65,36 +65,35 @@ uint16_t get_lux(uint16_t data){
 uint8_t read_luminescence(volatile uint8_t *luminescence_flag){	//manual str.12
 	
 	*luminescence_flag = 0;
-	static state_bh state = STATE_WRITE;	// Current state of the FSM
+	static state_bh state = BH_STATE_WRITE;	// Current state of the FSM
 	//uint8_t addr = 0x5C;			// ADDR ? 0.7VCC -> H
 	uint8_t addr = 0x23;			// ADDR ? 0.3VCC -> L
 	uint16_t data = -1;
-	//uint8_t result = -1;
 
 	// FSM
 	switch (state)
 	{
-		case STATE_WRITE:
+		case BH_STATE_WRITE:
 			twi_start((addr<<1) + TWI_WRITE);
 			twi_write(0b00010001);
 			twi_stop();
 			
-			state = STATE_READ;
+			state = BH_STATE_READ;
 		break;
-		case STATE_READ:
+		case BH_STATE_READ:
 			twi_start((addr<<1) + TWI_READ);			
 			data = twi_read_ack() >> 8;
 			data += twi_read_nack();			
 			twi_stop();
 			
 			*luminescence_flag = 1;
-			state = STATE_WRITE;
+			state = BH_STATE_WRITE;
 			
 			return get_lux(data);
 		break;
 		default:
 			//uart_puts("T1 reading error"); // nastavit error flag?
-			state = STATE_WRITE;
+			state = BH_STATE_WRITE;
 		break;
 	}
 	
