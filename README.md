@@ -66,8 +66,7 @@ Our aim was to make monitoring system for greenhouse with automatic control of s
 * **adc_sensors.c**
   * library for soil moisture sensor
   ```c
-  *
- * adc_sensors.c
+ /* adc_sensors.c
  *
  * Created: 14.12.2021 12:23:41
  *  Author: cerma
