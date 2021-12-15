@@ -13,14 +13,12 @@
 
 /* Variables ---------------------------------------------------------*/
 
-typedef enum {             // FSM for luminescence sensor
-	BH_STATE_WRITE,
-	BH_STATE_READ
-} state_bh;
-
-
 uint8_t read_temperature(volatile uint8_t *temp_flag);
 
-uint8_t read_luminescence(volatile uint8_t *luminescence_flag);
+uint16_t read_luminescence(volatile uint8_t *luminescence_flag);
+
+uint16_t get_lux(uint16_t data);
+
+void init_bh1750();
 
 #endif /* INPUT_SENSORS_H_ */

@@ -11,13 +11,15 @@
 
 /* Defines -----------------------------------------------------------*/
 #ifndef F_CPU
-#define F_CPU				16000000	// CPU frequency in Hz required for UART_BAUD_SELECT
+#define F_CPU				16000000	// CPU frequency in Hz for UART_BAUD_SELECT
 #endif
-#define LIGHT_LED			PB4			// Green
-#define PUMP_LED			PC2			// Output pin for controlling water pump
-#define TEMPERATURE_LED		PC3
+#define LIGHT_LED			PB5			// Green
+#define TEMP_LED_LOW		PB4			// Output pin for controlling water pump_
+#define TEMP_LED_HIGH		PB3
+#define SOIL_LED_LOW		PD2
+#define SOIL_LED_HIGH		PD3
+
 #define PELMET_SERVO_PIN	PB2
-#define WINDOW_SERVO_PIN	PB1			// ???
 #define wet_soil			400			// Define max value to consider soil 'wet'
 #define dry_soil			850			// Minimum value for dry soil
 
@@ -77,26 +79,29 @@ int main(void)
     while (1)
     {
 		if (soil_moisture_flag){
-			//if (soil_moisture != previous_soil_moisture){
+			if (soil_moisture != previous_soil_moisture){
 				previous_soil_moisture = soil_moisture;
-				//updateLED(luminescence, 400, PUMP_LED);
-				//todo
-			//}
+				//cli();
+				soil_control_update(soil_moisture, SOIL_LED_LOW, &PORTD, SOIL_LED_HIGH, &PORTD);
+				//sei();
+			}
 			soil_moisture_flag = 0;
 		}
 		if (temp_flag){
 			if (temperature != previous_temperature){
 				previous_temperature = temperature;
-				//updateLED(luminescence, 200, TEMPERATURE_LED);
-				//todo
+				//cli();
+				temp_control_update(temperature, TEMP_LED_LOW, &PORTB, TEMP_LED_HIGH, &PORTB);
+				//sei();
 			}
 			temp_flag = 0;
 		}
 		if (luminescence_flag){
 			if (luminescence != previous_luminescence){
 				previous_luminescence = luminescence;
-				
+				//cli();
 				light_control_update(luminescence, LIGHT_LED, &PORTB, PELMET_SERVO_PIN, &PORTB);
+				//sei();
 			}
 			luminescence_flag = 0;
 		}
@@ -111,6 +116,7 @@ int main(void)
 void green_house_setup(){
 	 init_interrupts();
 	 twi_init();
+	 init_bh1750();
 	 init_lcd();
 	 
 	 // Initialize UART to asynchronous, 8N1, 9600
@@ -121,6 +127,7 @@ void green_house_setup(){
 	 init_soil_sensor(&ADMUX, &ADCSRA);
 	 
 	 servo_init(&DDRB, PELMET_SERVO_PIN);
+	 servo_left(&PORTB, PELMET_SERVO_PIN);
 	 
 	 // Enables interrupts by setting the global interrupt mask
 	 sei();
@@ -140,12 +147,16 @@ void init_interrupts(){
 
 void init_leds(){
 	GPIO_config_output(&DDRB, LIGHT_LED);
-	GPIO_config_output(&DDRC, PUMP_LED);
-	GPIO_config_output(&DDRC, TEMPERATURE_LED);
+	GPIO_config_output(&DDRB, TEMP_LED_HIGH);
+	GPIO_config_output(&DDRB, TEMP_LED_LOW);
+	GPIO_config_output(&DDRD, SOIL_LED_HIGH);
+	GPIO_config_output(&DDRD, SOIL_LED_LOW);
 		
-	GPIO_write_high(&PORTB, LIGHT_LED);
-	GPIO_write_high(&PORTC, PUMP_LED);
-	GPIO_write_high(&PORTC, TEMPERATURE_LED);
+	/*GPIO_write_high(&PORTB, LIGHT_LED);
+	GPIO_write_high(&PORTB, TEMP_LED_HIGH);
+	GPIO_write_high(&PORTB, TEMP_LED_LOW);
+	GPIO_write_high(&PORTD, SOIL_LED_HIGH);
+	GPIO_write_high(&PORTD, SOIL_LED_LOW);*/
 }
 
 void updateLED(uint16_t intensity, uint8_t treshold, uint8_t led){
@@ -170,26 +181,32 @@ ISR(TIMER1_OVF_vect)
 	static uint8_t iteration = 1;
 	uint16_t result = 0;
 	
-	// Start ADC conversion
-	ADCSRA |= (1 << ADSC);
-	
-	if (iteration == 4) {
+	//cli();
+	if (iteration == 2) {
+		//read DHT12
+		
 		result = read_luminescence(&luminescence_flag);
 		
 		if (luminescence_flag) {
 			luminescence = result;
+			//light_control_update(luminescence, LIGHT_LED, &PORTB, PELMET_SERVO_PIN, &PORTB);
 		}
 		
-		//read DHT12
 		result = read_temperature(&temp_flag);
 		
 		if (temp_flag) {
 			temperature = result;
+			//temp_control_update(temperature, TEMP_LED_LOW, &PORTB, TEMP_LED_HIGH, &PORTB);
 		}
 		
 		iteration = 0;
+		
+		// Start ADC conversion
+		ADCSRA |= (1 << ADSC);
 	}
 	iteration++;
+	
+	//sei();
 }
 
 /**********************************************************************
@@ -202,7 +219,6 @@ ISR(TIMER0_OVF_vect)
 	lcd_update_menu(soil_moisture, temperature, luminescence);
 }
 
-
 /**********************************************************************
  * Function: ADC interrupt
  * Purpose:  Service routine starts when ADC completes the conversion.
@@ -212,18 +228,11 @@ ISR(TIMER0_OVF_vect)
  **********************************************************************/
 ISR(ADC_vect)
 {
-	char lcdstr [] = "0000000000";
+	cli();
 	uint16_t adc_value = 0;
 	adc_value = ADCW;    // Copy ADC result to 16-bit variable
 	soil_moisture = 100 - ((float)adc_value/1023.0)*100;  // soil moisture in %
-	//soil_moisture = ADCW / 1.0;
 	soil_moisture_flag = 1;
-	
-	/*lcd_gotoxy(0, 0);
-	dtostrf(soil_moisture,3,2,lcdstr);
-	lcd_puts(lcdstr);*/
-	
-	/*uint16_t data = ADCW;
-	soil_moisture = 100 - (ADCW);    // Copy ADC result to 16-bit variable	
-	soil_moisture_flag = 1;*/
+	//soil_control_update(soil_moisture, SOIL_LED_LOW, &PORTD, SOIL_LED_HIGH, &PORTD);
+	sei();
 }
