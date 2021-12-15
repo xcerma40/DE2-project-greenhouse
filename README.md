@@ -44,12 +44,25 @@ Our aim was to make monitoring system for greenhouse with automatic control of s
   * LM393 comparator
   * Operation Voltage: 3.3 to 5 V
   * Analog output
-
-
-
+* **LCD**
+  * Hitachi HD44780
+  * 2 lines
+  * characters per 1 line: 16
+  
 <a name="libs"></a>
 
 ## Libraries description
+* **gpio**
+  * library for controlling General Purpose Input/Output pins
+* **lcd**
+  * library for controlling LCD display 
+* **timer**
+  * library for controlling the timer modules
+* **uart**
+  * Interrupt UART library with receive/transmit circular buffers
+* **twi**
+  * library for TWI serial comunication
+  
 
 <a name="main"></a>
 
