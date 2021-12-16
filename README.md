@@ -55,7 +55,7 @@ If light intensity value is high, sunblinds are closed. if it's too low then lig
   * Hitachi HD44780
   * 2 lines
   * characters per 1 line: 16
-* 5xLED diode
+* **5xLED diode**
   
   ![Greenhouse schmeatic](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/Pictures/greenhouse%20schematic.png)
 <a name="libs"></a>
