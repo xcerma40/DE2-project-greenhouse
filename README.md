@@ -17,6 +17,7 @@ Link to the GitHub repository:
 * [Hardware description](#hardware)
 * [Libraries description](#libs)
 * [Main application](#main)
+* [Final results](#final)
 * [Video](#video)
 * [References](#references)
 
@@ -80,6 +81,20 @@ If light intensity value is high, sunblinds are closed. if it's too low then lig
 ## Main application
 
 [main.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/main.c)
+
+<a name="final"></a>
+
+## Final results
+
+Our final aplication contains three sensors, one servo and five LED diodes.
+
+![Greenhouse results](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/Pictures/Greenhouse%20real.jpeg)
+
+Value from every sensor is displayed on LCD display.
+Light intesity value is displayed in Lux and temperature in Celsius degrees.
+If soil moisture value is high then red LED is on. If it's too low then blue LED is on.
+If temperature is too high, red LED is on. if it's too low then blue LED is on.
+If light intensity value is high, sunblinds are closed. if it's too low then blue LED is on and blinds are open.
 
 <a name="video"></a>
 
