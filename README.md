@@ -75,7 +75,7 @@ If light intensity value is low, red
 
 ## Main application
 
-Write your text here.
+[main.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/main.c)
 
 <a name="video"></a>
 
