@@ -61,19 +61,19 @@ If light intensity value is high, sunblinds are closed. if it's too low then lig
 <a name="libs"></a>
 
 ## Libraries description
-* [gpio.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/gpio.c) / [gpio.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/gpio.h) - library for controlling General Purpose Input/Output pins
-* [lcd.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/lcd.c) / [lcd.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/lcd.h) - library for controlling LCD display 
-* [timer.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/timer.h) - library for controlling the timer modules
-* [uart.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/uart.c) / [uart.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/uart.h) - Interrupt UART library with receive/transmit circular buffers
-* [twi.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/twi.c) / [twi.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/twi.h) - library for TWI serial comunication
+* [gpio.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/gpio.c) / [gpio.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/gpio.h) - library for controlling General Purpose Input/Output pins
+* [lcd.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/lcd.c) / [lcd.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/lcd.h) / [lcd_definitions.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/lcd_definitions.h) - library for controlling LCD display 
+* [timer.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/timer.h) - library for controlling the timer modules
+* [uart.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/uart.c) / [uart.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/uart.h) - Interrupt UART library with receive/transmit circular buffers
+* [twi.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/twi.c) / [twi.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/library/twi.h) - library for TWI serial comunication
   
-* [adc_sensors.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/src/adc_sensors.c) / [adc_sensors.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/src/adc_sensors.h) - library for reading values from soil moisture sensor
+* [adc_sensors.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/src/adc_sensors.c) / [adc_sensors.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/src/adc_sensors.h) - library for reading values from soil moisture sensor
 
-* [i2c_sensors.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/src/i2c_sensors.c) / [i2c_sensors.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/src/i2c_sensors.h) - library for reading temperature and light intensity values from sensors DHT12 and light intensity sesor 
+* [i2c_sensors.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/src/i2c_sensors.c) / [i2c_sensors.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/src/output_peripherals.h) - library for reading temperature and light intensity values from sensors DHT12 and light intensity sesor 
 
-* [output peripherals.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/src/output%20peripherals.c) / [output peripherals.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/src/output_peripherals.h) - Library where treshold values are defined for each sensor and the outpust peripherals are set.
+* [output peripherals.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/src/output%20peripherals.c) / [output peripherals.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/src/output_peripherals.h) - Library where treshold values are defined for each sensor and the outpust peripherals are set.
 	
-* [servo.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/src/servo.c) / [servo.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/src/servo.h) - Library for setting servo positions
+* [servo.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/src/servo.c) / [servo.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/src/servo.h) - Library for setting servo positions
 
 <a name="main"></a>
 
