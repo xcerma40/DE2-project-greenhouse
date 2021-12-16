@@ -31,7 +31,7 @@ If soil moisture value is high then red LED is on, fan is on and windows are ope
 If temperature is too high, red LED is on, windows are open and fan is on. if it's too low then blue LED is on and special light bulb for heating is on.
 If light intensity value is high, sunblinds are closed. if it's too low then light bulb is on and blinds are open.
 
-![greenhouse objectives](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/Images/greenhouse%20objectives.png)
+![greenhouse objectives](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/Pictures/greenhouse%20objectives.png)
 
 
 <a name="hardware"></a>
