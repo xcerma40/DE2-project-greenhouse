@@ -57,14 +57,10 @@ If light intensity value is low, red
 <a name="libs"></a>
 
 ## Libraries description
-* [gpio.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/gpio.c) [gpio.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/gpio.h)
-  * library for controlling General Purpose Input/Output pins
-* **lcd**
-  * library for controlling LCD display 
-* **timer**
-  * library for controlling the timer modules
-* **uart**
-  * Interrupt UART library with receive/transmit circular buffers
+* [gpio.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/gpio.c) / [gpio.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/gpio.h) - library for controlling General Purpose Input/Output pins
+* [lcd.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/lcd.c) / [lcd.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/lcd.h) - library for controlling LCD display 
+* [timer.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/timer.h) - library for controlling the timer modules
+* [uart.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/uart.c) / [uart.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/uart.h) - Interrupt UART library with receive/transmit circular buffers
 * **twi**
   * library for TWI serial comunication
   
