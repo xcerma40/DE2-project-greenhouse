@@ -26,8 +26,11 @@ Link to the GitHub repository:
 
 Our aim was to make monitoring system for greenhouse with automatic control of soil moisture, temperature and light intensity. 
 Value from every sensor is displayed on LCD display.
-If soil moisture value is high then red LED is on, if it's too low then blue LED is on. 
-If light intensity value is low, red 
+If soil moisture value is high then red LED is on, fan is on and windows are open. if it's too low then blue LED is on and water pump starts pumping water to the plant boxes.
+If temperature is too high, red LED is on, windows are open and fan is on. if it's too low then blue LED is on and special light bulb for heating is on.
+If light intensity value is high, sunblinds are closed. if it's too low then light bulb is on and blinds are open.
+
+![greenhouse objectives](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/Images/greenhouse%20objectives.png)
 
 
 <a name="hardware"></a>
@@ -52,6 +55,7 @@ If light intensity value is low, red
   * Hitachi HD44780
   * 2 lines
   * characters per 1 line: 16
+* 5xLED diode
   
   ![Greenhouse schmeatic](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/Pictures/greenhouse%20schematic.png)
 <a name="libs"></a>
