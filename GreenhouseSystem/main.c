@@ -13,13 +13,13 @@
 #ifndef F_CPU
 #define F_CPU				16000000	// CPU frequency in Hz for UART_BAUD_SELECT
 #endif
-#define LIGHT_LED			PB5			// Green
+#define LIGHT_LED		PB5			// Green
 #define TEMP_LED_LOW		PB4			// Output pin for controlling water pump_
 #define TEMP_LED_HIGH		PB3
-#define SOIL_LED_LOW		PD2
-#define SOIL_LED_HIGH		PD3
+#define SOIL_LED_LOW		PB2
+#define SOIL_LED_HIGH		PD2
 
-#define PELMET_SERVO_PIN	PB2
+#define PELMET_SERVO_PIN	PD3
 #define wet_soil			400			// Define max value to consider soil 'wet'
 #define dry_soil			850			// Minimum value for dry soil
 
