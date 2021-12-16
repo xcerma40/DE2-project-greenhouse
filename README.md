@@ -57,7 +57,7 @@ If light intensity value is low, red
 <a name="libs"></a>
 
 ## Libraries description
-* **gpio**
+* [gpio.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/gpio.c) [gpio.h](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/library/gpio.h)
   * library for controlling General Purpose Input/Output pins
 * **lcd**
   * library for controlling LCD display 
