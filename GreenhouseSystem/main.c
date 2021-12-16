@@ -1,8 +1,10 @@
 /***********************************************************************
  * 
- * The I2C bus scanner detects the addresses of the modules that are 
- * connected to the SDA and SCL signals. A simple description of FSM is 
- * used.
+ * Greenhouse system watches over 3 main parameters - soil moisture,
+ * air temperature and light intesity. If some of those parameters
+ * fall out of thresholds, it indicates which parameters went out
+ * and automatically starts to correct them with output peripheries.
+ *
  * ATmega328P (Arduino Uno), 16 MHz, AVR 8-bit Toolchain 3.6.2
  *
  * Copyright (c) 2021-Present Vaclav Cermak, Lungu Masauso, Terezie Berankova
@@ -13,15 +15,13 @@
 #ifndef F_CPU
 #define F_CPU				16000000	// CPU frequency in Hz for UART_BAUD_SELECT
 #endif
-#define LIGHT_LED			PB5			// Green
-#define TEMP_LED_LOW		PB4			// Output pin for controlling water pump_
-#define TEMP_LED_HIGH		PB3
-#define SOIL_LED_LOW		PD2
-#define SOIL_LED_HIGH		PD3
+#define LIGHT_LED			PB5			// This led works as artificial lighting.
+#define TEMP_LED_LOW		PB4			// Led for too low temperature indication
+#define TEMP_LED_HIGH		PB3			// Led for too high temperature indication
+#define SOIL_LED_LOW		PD2			// Led for too low soil moisture indication
+#define SOIL_LED_HIGH		PD3			// Led for too high soil moisture indication
 
-#define PELMET_SERVO_PIN	PB2
-#define wet_soil			400			// Define max value to consider soil 'wet'
-#define dry_soil			850			// Minimum value for dry soil
+#define PELMET_SERVO_PIN	PB2			// Servo for controlling pelmet
 
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>         // AVR device-specific IO definitions
@@ -34,47 +34,59 @@
 #include "library/twi.h"				// TWI library for AVR-GCC
 #include "library/lcd.h"				// Tomas Fryza's Library for LCD manipulation
 #include "library/lcd_definitions.h"	// Definitions for LCD library
-#include "library/gpio.h"				// Library for pin input/output manipulation
-#include "src/i2c_sensors.h"			// Functions for handling output peripherals as LCD and LEDs
-#include "src/output_peripherals.h"		// 
+#include "library/gpio.h"				// Library for pin input/output settings and manipulation
+#include "src/i2c_sensors.h"			// Functions for handling input peripherals connected via i2c (DHT12 and GY30)
+#include "src/output_peripherals.h"		// Functions for handling output peripherals as LCD and LEDs
 #include "src/servo.h"					// Servo handling
 #include "src/adc_sensors.h"			// ADC sensors as soil moisture
 
-/* Variables ---------------------------------------------------------*/
+/* Global variables for storing all main parameters -------------------*/
 
 float soil_moisture = 0.0;
-uint16_t temperature = 0;
-uint16_t luminescence = 0;
-// flags ---------------------------------------------------------------
-uint8_t temp_flag = 0;
+int16_t temperature = 0;		// value is 10 times higher than real value.
+uint16_t luminescence = 0;		// value is 10 times higher than real value.
+// flags that indicate, whether value was read from sensor correctly-----
+uint8_t temp_flag = 0;	
 uint8_t soil_moisture_flag = 0;
 uint8_t luminescence_flag = 0;
 
 
 /* Function declarations ----------------------------------------------*/
 
+/**
+ * @brief  Initialize greenhouse system
+ * @return none
+ */
 void green_house_setup();
-void updateLED(uint16_t intensity, uint8_t treshold, uint8_t led);
+/**
+ * @brief  Initialize leds in Data Direction Registers
+ * @return none
+ */
 void init_leds();
+/**
+ * @brief  Initialize and enable interrupts
+ * @return none
+ */
 void init_interrupts();
-//void initLCD();
-//void lcd_updateMenu();
 
 /* Function definitions ----------------------------------------------*/
 /**********************************************************************
- * Function: Main function where the program execution begins
- * Purpose:  Processes input on change and controls output peripheries.
+ * Function: main()
+ * Purpose:  Main function where the program execution begins.
+  *			 Processes parmeters on change (from input peripheries)
+			 and controls output peripheries for parameter's correction.
  * Returns:  none
  **********************************************************************/
 
 int main(void)
 {
 	green_house_setup();
-	//uart_puts("GH: Init\r\n");
 	
+	// temporary values for checking if changes were done. Added for performance purposes
 	float previous_soil_moisture = 0.0;
-	uint16_t previous_temperature = UINT16_MAX;
+	int16_t previous_temperature = UINT16_MAX;
 	uint16_t previous_luminescence = UINT16_MAX;
+	
     // Infinite loop
     while (1)
     {
@@ -108,32 +120,44 @@ int main(void)
 		}
     }
 
-    // Will never reach this
     return 0;
 }
 
-
-
+/**********************************************************************
+ * Function: green_house_setup()
+ * Purpose:  Main setup for whole aplication.
+ *			 Initializes all input and output peripheries.
+ *			 This function must be called first.
+ **********************************************************************/
 void green_house_setup(){
+	 // Initialize UART to asynchronous, 8N1, 9600 - not used
+	 //uart_init(UART_BAUD_SELECT(9600, F_CPU));
+	 //uart_puts("GH: init\r\n");
+	 
+	 // init support libraries and interrupts
 	 init_interrupts();
 	 twi_init();
-	 init_bh1750();
 	 init_lcd();
 	 
-	 // Initialize UART to asynchronous, 8N1, 9600
-	 uart_init(UART_BAUD_SELECT(9600, F_CPU));
-	 uart_puts("test");
-	 
+	 // init peripheries
 	 init_leds();
+	 init_bh1750();
 	 init_soil_sensor(&ADMUX, &ADCSRA);
-	 
 	 servo_init(&DDRB, PELMET_SERVO_PIN);
+	 // set pelmet servo to default position -> pelmet open
 	 servo_left(&PORTB, PELMET_SERVO_PIN);
 	 
+	 //uart_puts("GH: done\r\n");
 	 // Enables interrupts by setting the global interrupt mask
 	 sei();
 }
 
+/**********************************************************************
+ * Function: init_interrupts()
+ * Purpose:  Initialization overflow interrupts.
+ *			 Initializes 2 interrupt routines - one for lcd and one for
+ * 			 reading from sensors (adc,i2c) - and enables them
+ **********************************************************************/
 void init_interrupts(){
 	TIM0_overflow_16ms();
 	TIM0_overflow_interrupt_enable();
@@ -142,32 +166,17 @@ void init_interrupts(){
 	TIM1_overflow_interrupt_enable();
 }
 
-
-
-
-
+/**********************************************************************
+ * Function: Initialization of all leds used by greenhouse
+ * Purpose:  All leds are configured to their pin connection to arduino board.
+ *           Data direction registers are set as output.
+ **********************************************************************/
 void init_leds(){
 	GPIO_config_output(&DDRB, LIGHT_LED);
 	GPIO_config_output(&DDRB, TEMP_LED_HIGH);
 	GPIO_config_output(&DDRB, TEMP_LED_LOW);
 	GPIO_config_output(&DDRD, SOIL_LED_HIGH);
 	GPIO_config_output(&DDRD, SOIL_LED_LOW);
-		
-	/*GPIO_write_high(&PORTB, LIGHT_LED);
-	GPIO_write_high(&PORTB, TEMP_LED_HIGH);
-	GPIO_write_high(&PORTB, TEMP_LED_LOW);
-	GPIO_write_high(&PORTD, SOIL_LED_HIGH);
-	GPIO_write_high(&PORTD, SOIL_LED_LOW);*/
-}
-
-void updateLED(uint16_t intensity, uint8_t treshold, uint8_t led){
-
-	if (intensity < treshold){ // luminescence < 10.0
-		PORTC = PORTC | (1<<led);
-	}
-	else {
-		PORTC = PORTC & ~(1<<led);
-	}
 }
 
 /* Interrupt service routines ----------------------------------------*/
@@ -180,21 +189,22 @@ void updateLED(uint16_t intensity, uint8_t treshold, uint8_t led){
 ISR(TIMER1_OVF_vect)
 {
 	static uint8_t iteration = 1;
-	uint16_t result = 0;
+	uint16_t result_l = 0;
+	int16_t  result_t = 0;
 	
 	if (iteration == 2) {
 		//read DHT12
 		
-		result = read_luminescence(&luminescence_flag);
+		result_l = read_luminescence(&luminescence_flag);
 		
 		if (luminescence_flag) {
-			luminescence = result;
+			luminescence = result_l;
 		}
 		
-		result = read_temperature(&temp_flag);
+		result_t = read_temperature(&temp_flag);
 		
 		if (temp_flag) {
-			temperature = result;
+			temperature = result_t;
 		}
 		
 		iteration = 0;
@@ -230,6 +240,5 @@ ISR(ADC_vect)
 	adc_value = ADCW;    // Copy ADC result to 16-bit variable
 	soil_moisture = 100 - ((float)adc_value/1023.0)*100;  // soil moisture in %
 	soil_moisture_flag = 1;
-	//soil_control_update(soil_moisture, SOIL_LED_LOW, &PORTD, SOIL_LED_HIGH, &PORTD);
 	sei();
 }

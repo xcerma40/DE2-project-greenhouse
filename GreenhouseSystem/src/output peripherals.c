@@ -25,12 +25,10 @@ void init_lcd(){
 }
 
 //predelat na itoa
-void lcd_update_menu(float soil_moisture, uint16_t temperature, uint16_t luminescence){
+void lcd_update_menu(float soil_moisture, int16_t temperature, uint16_t luminescence){
 	static char lcd_string1[] = "00000000";
 	static char lcd_string2[] = "00000000";
 	static char lcd_string3[] = "00000000";
-	
-	uint8_t digits_length = 0;
 	
 	lcd_gotoxy(0, 0);
 	lcd_puts("S:");
@@ -71,25 +69,32 @@ void led_turn_off(volatile uint8_t *reg_name, uint8_t led_pin){
 void light_control_init(uint8_t light_led, uint8_t *led_port_register, uint8_t servo_pin, uint8_t *servo_port_register){
 	// open pelmet (servo)
 	servo_right(servo_port_register,servo_pin);
+	pelmet_is_opened = 1;
 	// turn off light (led)
 	led_turn_off(led_port_register, light_led);
 }
-//todo
+
 void light_control_update(uint16_t luminescence, uint8_t light_led, volatile uint8_t *led_port_register, uint8_t servo_pin, volatile uint8_t *servo_port_register){
 	
 	// whether its too dark or too shiny, close pelmet (servo) and turn artificial lighting on (led)
 	if (luminescence <= TRESHOLD_LUMINESCENCE_DARK || luminescence >= TRESHOLD_LUMINESCENCE_LIGHT){
-		//servo_left(servo_port_register, servo_pin);
+		if (pelmet_is_opened){
+			servo_left(servo_port_register, servo_pin);
+			pelmet_is_opened = 0;
+		}
 		led_turn_on(led_port_register, light_led);	
 	}
 	// if light conditions are optimal, open pelmet (servo) and turn lights off (led)
 	else {
-		//servo_right(servo_port_register, servo_pin);
+		if (!pelmet_is_opened){
+			servo_right(servo_port_register, servo_pin);	
+			pelmet_is_opened = 1;
+		}
 		led_turn_off(led_port_register, light_led);
 	}
 }
 
-//todo
+
 void temp_control_update(uint16_t temperature, uint8_t led_low, volatile uint8_t *led_low_port_register, uint8_t led_high, volatile uint8_t *led_high_port_register){
 	
 	if (temperature <= TRESHOLD_TEMPERATURE_COLD) {

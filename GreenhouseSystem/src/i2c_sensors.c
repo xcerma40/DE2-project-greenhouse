@@ -1,20 +1,21 @@
 /*
- * input_sensors.c
+ * ATmega328P (Arduino Uno), 16 MHz, AVR 8-bit Toolchain 3.6.2
  *
- * Created: 14.12.2021 1:32:27
- *  Author: cerma
+ * Copyright (c) 2021-Present Vaclav Cermak, Lungu Masauso, Terezie Berankova
  */ 
+
+/* Includes ----------------------------------------------------------*/
 #include "i2c_sensors.h"
 
-uint8_t read_temperature(volatile uint8_t *temp_flag)
+int16_t read_temperature(volatile uint8_t *temp_flag)
 {
 	*temp_flag = 0;
 	uint8_t addr = 0x5C;			// 7bit I2C address of humid+temp sensor, needs to be shifted to right for (n)ack
 
 	uint8_t humid_integral = 0;
-	uint16_t humid_scale = 0;
-	uint16_t temperature_integral = 0;
-	uint8_t temperature_scale = 0;
+	uint8_t humid_scale = 0;
+	int8_t temperature_integral = 0;
+	int8_t temperature_scale = 0;
 	
 	uint8_t checksum = 0;
 	
@@ -50,11 +51,12 @@ uint8_t read_temperature(volatile uint8_t *temp_flag)
 }
 
 void init_bh1750(){
-	//uint8_t addr = 0x5C;			// ADDR ? 0.7VCC -> H
-	uint8_t addr = 0x23;			// ADDR ? 0.3VCC -> L
+	
+	uint8_t addr = 0x23;
+	uint8_t mode = 0b00010000;		// value corresponds to High Resolution mode (more information in datasheet)
 	
 	twi_start((addr<<1) + TWI_WRITE);
-	twi_write(0b00010000);		// high resolution
+	twi_write(mode);
 	twi_stop();
 }
 

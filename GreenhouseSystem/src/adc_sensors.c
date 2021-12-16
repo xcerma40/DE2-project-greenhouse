@@ -1,12 +1,20 @@
 /*
- * adc_sensors.c
+ * ATmega328P (Arduino Uno), 16 MHz, AVR 8-bit Toolchain 3.6.2
  *
- * Created: 14.12.2021 12:23:41
- *  Author: cerma
+ * Copyright (c) 2021-Present Vaclav Cermak, Lungu Masauso, Terezie Berankova
  */ 
 
+/* Includes ----------------------------------------------------------*/
 #include "adc_sensors.h"
 
+/* Function definitions ----------------------------------------------*/
+/**********************************************************************
+ * Function: init_soil_sensor()
+ * Purpose:  Initializes soil sensor on analog pin PC0[A0], sets input channel, interrupt and prescaler
+ * Input:    admux_register - register that selects reference source voltage to ADC and chooses pin to read from
+ *           adcsra_register - register, that manages ADC conversion
+ * Returns:  none
+ **********************************************************************/
 void init_soil_sensor(volatile uint8_t *admux_register, volatile uint8_t *adcsra_register){
 	// Configure ADC to convert PC0[A0] analog value
 	// Set ADC reference to AVcc

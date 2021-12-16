@@ -9,8 +9,8 @@
 #ifndef OUTPUT_PERIPHERALS_H_
 #define OUTPUT_PERIPHERALS_H_
 
-#define TRESHOLD_LUMINESCENCE_DARK	100	// 100 Lux
-#define TRESHOLD_LUMINESCENCE_LIGHT	600	// 600 Lux
+#define TRESHOLD_LUMINESCENCE_DARK	100		// 100 Lux
+#define TRESHOLD_LUMINESCENCE_LIGHT	600		// 600 Lux
 #define TRESHOLD_TEMPERATURE_COLD	250		// 25 °C
 #define TRESHOLD_TEMPERATURE_HOT	350		// 35 °C
 #define TRESHOLD_SOIL_LOW			10		// 10%
@@ -30,9 +30,11 @@ typedef enum {             // FSM for luminescence sensor
 	LC_STATE_OPTIMAL,
 } state_lc;
 
+uint8_t pelmet_is_open = 1;
+
 void lcd_fill_whitespace(uint8_t length);
 void init_lcd();
-void lcd_update_menu(float soil_moisture, uint16_t temperature, uint16_t luminescence);
+void lcd_update_menu(float soil_moisture, int16_t temperature, uint16_t luminescence);
 void led_turn_on(volatile uint8_t *reg_name, uint8_t led_pin);
 void led_turn_off(volatile uint8_t *reg_name, uint8_t led_pin);
 void light_control_update(uint16_t luminescence, uint8_t light_led, volatile uint8_t *led_port_register, uint8_t servo_pin, volatile uint8_t *servo_port_register);
