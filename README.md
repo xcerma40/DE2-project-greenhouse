@@ -28,6 +28,8 @@ Our aim was to make monitoring system for greenhouse with automatic control of s
 Value from every sensor is displayed on LCD display.
 If soil moisture value is high then red LED is on, if it's too low then blue LED is on. 
 If light intensity value is low, red 
+
+
 <a name="hardware"></a>
 
 ## Hardware description
@@ -51,6 +53,7 @@ If light intensity value is low, red
   * 2 lines
   * characters per 1 line: 16
   
+  ![Greenhouse schmeatic](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/Pictures/greenhouse%20schematic.png)
 <a name="libs"></a>
 
 ## Libraries description
