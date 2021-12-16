@@ -1,10 +1,22 @@
 /*
- * servo.h
+ * ATmega328P (Arduino Uno), 16 MHz, AVR 8-bit Toolchain 3.6.2
  *
- * Created: 14.12.2021 0:39:20
- *  Author: cerma
+ * Copyright (c) 2021-Present Vaclav Cermak, Lungu Masauso, Terezie Berankova
  */ 
 
+/**
+ * @file 
+ * @code #include "servo.h" @endcode
+ *
+ * @brief Library for servo control
+ *
+ * Library contains functions for servo rotation (fully left and right)
+ *
+ * @author Vaclav Cermak, Lungu Masauso, Tereza Berankova
+ *
+ * @copyright (c) 2019-2021 Vaclav Cermak, Lungu Masauso, Tereza Berankova
+ * @{
+ */
 
 #ifndef SERVO_H_
 #define SERVO_H_

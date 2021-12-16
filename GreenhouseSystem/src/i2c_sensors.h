@@ -47,7 +47,7 @@ uint16_t read_luminescence(volatile uint8_t *luminescence_flag);
 /**
  * @brief  Function for conversion between raw data from GY30 to Lux.
  * @param  data is raw data from sensor
- * @return luminescence in Lux 
+ * @return converted data as luminescence in Lux 
  */
 uint16_t get_lux(uint16_t data);
 
