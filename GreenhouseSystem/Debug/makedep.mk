@@ -2,13 +2,21 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
-gpio.c
+library\gpio.c
 
-lcd.c
+library\lcd.c
+
+library\twi.c
+
+library\uart.c
 
 main.c
 
-twi.c
+src\adc_sensors.c
 
-uart.c
+src\i2c_sensors.c
+
+src\output peripherals.c
+
+src\servo.c
 

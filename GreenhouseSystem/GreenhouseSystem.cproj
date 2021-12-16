@@ -120,39 +120,67 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="gpio.c">
+    <Compile Include="library\gpio.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="gpio.h">
+    <Compile Include="library\gpio.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lcd.c">
+    <Compile Include="library\lcd.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lcd.h">
+    <Compile Include="library\lcd.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lcd_definitions.h">
+    <Compile Include="library\lcd_definitions.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="library\timer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="library\twi.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="library\twi.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="library\uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="library\uart.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="timer.h">
+    <Compile Include="src\adc_sensors.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="twi.c">
+    <Compile Include="src\adc_sensors.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="twi.h">
+    <Compile Include="src\i2c_sensors.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="uart.c">
+    <Compile Include="src\i2c_sensors.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="uart.h">
+    <Compile Include="src\output peripherals.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\output_peripherals.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\servo.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\servo.h">
+      <SubType>compile</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="library" />
+    <Folder Include="src" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
