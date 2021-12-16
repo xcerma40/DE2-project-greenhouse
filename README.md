@@ -79,7 +79,7 @@ If light intensity value is high, sunblinds are closed. if it's too low then lig
 
 ## Main application
 
-[main.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/dev/GreenhouseSystem/main.c)
+[main.c](https://github.com/xcerma40/DE2-project-greenhouse/blob/master/GreenhouseSystem/main.c)
 
 <a name="video"></a>
 
