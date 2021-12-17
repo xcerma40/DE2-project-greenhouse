@@ -1,10 +1,10 @@
 /*
- * GPIO library for AVR-GCC.
+ * Servo library for Greenhouse system.
  * ATmega328P (Arduino Uno), 16 MHz, AVR 8-bit Toolchain 3.6.2
  * servo.c
  *
- * Created: 14.12.2021 0:46:24
- * Author: Vaclav Cermak
+ * Created: 14.12.2021
+ * Author: Vaclav Cermak, Lungu Masauso, Tereza Berankova
  */ 
 
 /* Includes ----------------------------------------------------------*/

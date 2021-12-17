@@ -1,8 +1,11 @@
 /*
+ * ADC_Sensors library for Greenhouse system.
  * ATmega328P (Arduino Uno), 16 MHz, AVR 8-bit Toolchain 3.6.2
+ * adc_sensors.c
  *
- * Copyright (c) 2021-Present Vaclav Cermak, Lungu Masauso, Terezie Berankova
- */ 
+ * Created: 14.12.2021 0:46:24
+ * Author: Vaclav Cermak, Lungu Masauso, Tereza Berankova
+ */  
 
 /* Includes ----------------------------------------------------------*/
 #include "adc_sensors.h"
